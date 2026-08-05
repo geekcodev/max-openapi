@@ -1,0 +1,2320 @@
+openapi: 3.1.0
+info:
+  title: MAX Messenger Bot API
+  description: |
+    API MAX — это интерфейс, который позволяет ботам взаимодействовать с платформой MAX
+    и получать необходимые данные с помощью HTTPS-запросов к серверу.
+
+    **Base URL:** `https://platform-api2.max.ru`
+
+    **Аутентификация:** Заголовок `Authorization: <access_token>`.
+    Передача токена через query-параметры больше не поддерживается.
+
+    **Важно:**
+    - Используйте домен `platform-api2.max.ru` вместо `platform-api.max.ru`.
+    - Добавьте сертификат Минцифры в список доверенных.
+    - HTTP вебхуки больше не поддерживаются — используйте HTTPS.
+    - Long Polling ограничен по скорости и сроку хранения событий — не подходит для production.
+  version: 1.0.0
+  contact:
+    name: MAX Developer Support
+    url: https://dev.max.ru/help
+  license:
+    name: Proprietary
+    url: https://dev.max.ru
+
+servers:
+  - url: https://platform-api2.max.ru
+    description: Основной сервер API
+
+security:
+  - bearerAuth: [ ]
+
+tags:
+  - name: Bots
+    description: Управление информацией о боте
+  - name: Chats
+    description: Управление групповыми чатами и каналами
+  - name: Subscriptions
+    description: Управление подписками на обновления (Webhook / Long Polling)
+  - name: Uploads
+    description: Загрузка медиафайлов
+  - name: Messages
+    description: Отправка, получение, редактирование и удаление сообщений
+  - name: Answers
+    description: Ответ на callback-кнопки
+
+paths:
+  /me:
+    get:
+      operationId: getMe
+      summary: Получение информации о боте
+      description: 'Возвращает объект `BotInfo` с id бота, именем, username, временем последней активности, описанием, аватаром и командами.'
+      tags: [ Bots ]
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /me/commands:
+    patch:
+      operationId: editBotCommands
+      summary: Редактирование команд бота
+      description: |
+        Добавляет, редактирует или удаляет команды бота.
+        Чтобы удалить все команды, передайте пустой массив `[]`.
+      tags: [ Bots ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                commands:
+                  type: array
+                  nullable: true
+                  description: Массив команд бота (максимум 32)
+                  items:
+                    $ref: "#/components/schemas/BotCommand"
+      responses:
+        "200":
+          description: Команды успешно обновлены
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commands:
+                    type: array
+                    nullable: true
+                    items:
+                      $ref: "#/components/schemas/BotCommand"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /chats:
+    get:
+      operationId: getChats
+      summary: Получение списка всех групповых чатов и каналов
+      description: |
+        ⚠️ **DEPRECATED с июня 2026** — метод больше не поддерживается.
+        Вместо него используйте `POST /subscriptions` для подписки на события `bot_added` / `bot_started`
+        и храните chat_id самостоятельно.
+      tags: [ Chats ]
+      deprecated: true
+      responses:
+        "200":
+          description: Успешный запрос (deprecated)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  chats:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Chat"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /chats/{chatId}:
+    get:
+      operationId: getChat
+      summary: Получение информации о групповом чате или канале
+      tags: [ Chats ]
+      parameters:
+        - $ref: "#/components/parameters/chatId"
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Chat"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    patch:
+      operationId: editChat
+      summary: Изменение информации о групповом чате или канале
+      description: Бот должен быть администратором чата/канала.
+      tags: [ Chats ]
+      parameters:
+        - $ref: "#/components/parameters/chatId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  nullable: true
+                  description: Название чата (1–200 символов)
+                  minLength: 1
+                  maxLength: 200
+                icon:
+                  type: object
+                  nullable: true
+                  description: Изображение иконки чата
+                  properties:
+                    url:
+                      type: string
+                      description: URL изображения
+                    payload:
+                      type: string
+                      description: Payload изображения
+                pin:
+                  type: string
+                  nullable: true
+                  description: ID сообщения для закрепления (для открепления используйте DELETE pin)
+                notify:
+                  type: boolean
+                  nullable: true
+                  default: true
+                  description: Отправлять ли системное уведомление об изменении
+      responses:
+        "200":
+          description: Информация о чате обновлена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Chat"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /chats/{chatId}/actions:
+    post:
+      operationId: sendBotAction
+      summary: Отправка действия бота в групповой чат
+      description: |
+        Отправляет действие бота (печатает, отправляет фото/видео/аудио/файл).
+      tags: [ Chats ]
+      parameters:
+        - $ref: "#/components/parameters/chatId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - action
+              properties:
+                action:
+                  $ref: "#/components/schemas/SenderAction"
+      responses:
+        "200":
+          description: Действие отправлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /chats/{chatId}/pin:
+    get:
+      operationId: getPinnedMessage
+      summary: Получение закреплённого сообщения в групповом чате или канале
+      description: Бот должен быть администратором.
+      tags: [ Chats ]
+      parameters:
+        - $ref: "#/components/parameters/chatId"
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    $ref: "#/components/schemas/Message"
+                    nullable: true
+                    description: Закреплённое сообщение (null, если нет)
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    put:
+      operationId: pinMessage
+      summary: Закрепление сообщения в групповом чате или канале
+      description: Бот должен быть администратором.
+      tags: [ Chats ]
+      parameters:
+        - $ref: "#/components/parameters/chatId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message_id
+              properties:
+                message_id:
+                  type: string
+                  description: 'ID сообщения для закрепления (совпадает с `Message.body.mid`)'
+                notify:
+                  type: boolean
+                  nullable: true
+                  default: true
+                  description: Уведомлять участников о закреплении
+      responses:
+        "200":
+          description: Сообщение закреплено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    delete:
+      operationId: unpinMessage
+      summary: Открепление сообщения в групповом чате или канале
+      description: Бот должен быть администратором.
+      tags: [ Chats ]
+      parameters:
+        - $ref: "#/components/parameters/chatId"
+      responses:
+        "200":
+          description: Сообщение откреплено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /chats/{chatId}/members/me:
+    get:
+      operationId: getBotMembership
+      summary: Получение информации о членстве бота в групповом чате или канале
+      description: |
+        Возвращает информацию о членстве бота в чате/канале, включая доступные права администратора.
+        Бот идентифицируется по access_token.
+      tags: [ Chats ]
+      parameters:
+        - $ref: "#/components/parameters/chatId"
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMember"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    delete:
+      operationId: removeBotFromChat
+      summary: Удаление бота из группового чата или канала
+      tags: [ Chats ]
+      parameters:
+        - $ref: "#/components/parameters/chatId"
+      responses:
+        "200":
+          description: Бот удалён из чата
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /chats/{chatId}/members/admins:
+    get:
+      operationId: getChatAdmins
+      summary: Получение списка администраторов группового чата или канала
+      description: Возвращает список всех администраторов (пользователей и ботов) с данными. Бот должен быть администратором.
+      tags: [ Chats ]
+      parameters:
+        - $ref: "#/components/parameters/chatId"
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  members:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChatMember"
+                  marker:
+                    type: integer
+                    format: int64
+                    nullable: true
+                    description: Маркер для следующей страницы
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    post:
+      operationId: addChatAdmin
+      summary: Назначить администратора группового чата или канала
+      description: |
+        Назначает права администратора пользователям/ботам, которые являются участниками чата/канала.
+        Бот должен быть администратором с правом `add_admins`.
+        Повторный вызов с тем же пользователем заменяет его права (PUT-семантика).
+      tags: [ Chats ]
+      parameters:
+        - $ref: "#/components/parameters/chatId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - admins
+              properties:
+                admins:
+                  type: array
+                  description: Список пользователей/ботов для назначения администраторами
+                  items:
+                    $ref: "#/components/schemas/ChatAdmin"
+      responses:
+        "200":
+          description: Администраторы назначены
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /chats/{chatId}/members/admins/{userId}:
+    delete:
+      operationId: removeChatAdmin
+      summary: Отменить права администратора в групповом чате или канале
+      description: |
+        Отзывает права администратора у пользователя/бота. Они остаются в чате.
+        Бот должен быть администратором с правом `add_admins`.
+      tags: [ Chats ]
+      parameters:
+        - $ref: "#/components/parameters/chatId"
+        - name: userId
+          in: path
+          required: true
+          description: ID пользователя/бота для снятия с администратора
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Права администратора отменены
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /chats/{chatId}/members:
+    get:
+      operationId: getChatMembers
+      summary: Получение участников группового чата или канала
+      description: Бот должен быть администратором.
+      tags: [ Chats ]
+      parameters:
+        - $ref: "#/components/parameters/chatId"
+        - name: user_ids
+          in: query
+          required: false
+          description: |
+            Конкретные ID пользователей для проверки (игнорирует `count` и `marker`).
+          schema:
+            type: array
+            nullable: true
+            items:
+              type: integer
+              format: int64
+        - name: marker
+          in: query
+          required: false
+          description: Маркер для следующей страницы
+          schema:
+            type: integer
+            format: int64
+        - name: count
+          in: query
+          required: false
+          description: Количество участников для возврата (по умолчанию 20)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  members:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChatMember"
+                  marker:
+                    type: integer
+                    format: int64
+                    nullable: true
+                    description: Маркер для следующей страницы
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    post:
+      operationId: addChatMembers
+      summary: Добавление участников в групповой чат
+      description: |
+        Добавляет участников в групповой чат. Бот должен быть администратором с правом `add_remove_members`.
+        Нельзя добавлять подписчиков в каналы.
+      tags: [ Chats ]
+      parameters:
+        - $ref: "#/components/parameters/chatId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_ids
+              properties:
+                user_ids:
+                  type: array
+                  description: Массив ID пользователей (максимум 100)
+                  items:
+                    type: integer
+                    format: int64
+                  maxItems: 100
+      responses:
+        "200":
+          description: Участники добавлены
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      failed_user_ids:
+                        type: array
+                        nullable: true
+                        description: ID пользователей, которых не удалось добавить
+                        items:
+                          type: integer
+                          format: int64
+                      failed_user_details:
+                        type: array
+                        nullable: true
+                        description: Подробные причины ошибок
+                        items:
+                          $ref: "#/components/schemas/FailedUserDetails"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    delete:
+      operationId: removeChatMember
+      summary: Удаление участников из группового чата или канала
+      description: |
+        Удаляет участника из чата/канала. Бот должен быть администратором с правом `add_remove_members`.
+      tags: [ Chats ]
+      parameters:
+        - $ref: "#/components/parameters/chatId"
+        - name: user_id
+          in: query
+          required: true
+          description: ID пользователя для удаления
+          schema:
+            type: integer
+            format: int64
+        - name: block
+          in: query
+          required: false
+          description: |
+            Если `true`, пользователь блокируется (только для чатов по публичной/приватной ссылке, игнорируется для остальных)
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Участник удалён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /subscriptions:
+    get:
+      operationId: getSubscriptions
+      summary: Получение всех подписок через Webhook
+      tags: [ Subscriptions ]
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subscriptions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Subscription"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    post:
+      operationId: createSubscription
+      summary: Подписка на обновления о новых событиях через Webhook
+      description: |
+        Создаёт подписку на обновления через Webhook — основной механизм доставки событий для production.
+
+        **Модель доставки событий:**
+        1. Событие происходит → POST на webhook-эндпоинт с объектом `Update`
+        2. TLS-валидация эндпоинта
+        3. Если указан `secret`, проверяется заголовок `X-Max-Bot-Api-Secret`
+        4. Эндпоинт должен вернуть HTTP 200 в течение 30 секунд
+        5. Экспоненциальные повторы: 60с → 150с → 375с → ... (10 попыток за ~8 часов)
+        6. Если нет успеха в течение 8 часов, бот автоматически отписывается
+
+        **Требования к webhook-эндпоинту:**
+        - HTTPS на порту 443
+        - TLS-сертификат от доверенного CA или сертификат Минцифры (без самоподписных)
+        - Домен должен совпадать с CN или SAN
+        - Полная цепочка сертификатов обязательна
+
+        Long Polling отключается при активной подписке.
+      tags: [ Subscriptions ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  description: 'HTTPS URL эндпоинта (должен начинаться с `https://`)'
+                  pattern: "^https://"
+                update_types:
+                  type: array
+                  nullable: true
+                  description: |
+                    Типы обновлений для подписки (например, `["message_created", "bot_started"]`).
+                    См. объект Update для полного списка.
+                  items:
+                    type: string
+                secret:
+                  type: string
+                  nullable: true
+                  description: |
+                    Секретный ключ (5–256 символов, `[a-zA-Z0-9_-]`).
+                    Передаётся в заголовке `X-Max-Bot-Api-Secret`.
+                  minLength: 5
+                  maxLength: 256
+                  pattern: "^[a-zA-Z0-9_-]+$"
+      responses:
+        "200":
+          description: Подписка создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    delete:
+      operationId: deleteSubscription
+      summary: Отписка от обновлений о новых событиях через Webhook
+      description: |
+        После вызова бот перестаёт получать уведомления по webhook;
+        Long Polling становится доступен.
+      tags: [ Subscriptions ]
+      parameters:
+        - name: url
+          in: query
+          required: true
+          description: URL webhook для удаления
+          schema:
+            type: string
+            format: uri
+      responses:
+        "200":
+          description: Подписка удалена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /updates:
+    get:
+      operationId: getUpdates
+      summary: Получение обновлений о событиях через Long Polling
+      description: |
+        Long Polling — для разработки и тестирования. Не подходит для production.
+        Получение обновлений ограничено по скорости и сроку хранения событий.
+      tags: [ Subscriptions ]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Максимальное количество обновлений за раз (по умолчанию 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - name: timeout
+          in: query
+          required: false
+          description: Таймаут long-polling в секундах (по умолчанию 30)
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 90
+            default: 30
+        - name: marker
+          in: query
+          required: false
+          description: |
+            Маркер для пагинации. Передайте `null` или опустите для получения только последних событий.
+            Передайте маркер из предыдущего ответа для получения всех событий с момента последнего чтения.
+          schema:
+            type: integer
+            format: int64
+            nullable: true
+        - name: types
+          in: query
+          required: false
+          description: |
+            Типы обновлений (например, `types=message_created,message_callback`).
+            См. объект Update для полного списка.
+          schema:
+            type: array
+            nullable: true
+            items:
+              type: string
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updates:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Update"
+                  marker:
+                    type: integer
+                    format: int64
+                    nullable: true
+                    description: Маркер для следующего запроса
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /uploads:
+    post:
+      operationId: uploadMedia
+      summary: Загрузка медиафайлов
+      description: |
+        Загружает медиафайл и возвращает URL для загрузки и токен для прикрепления к сообщениям.
+
+        **Поддерживаемые типы и ограничения:**
+
+        | Тип | Форматы | Макс. размер |
+        |-----|---------|-------------|
+        | `image` | JPG, JPEG, PNG, GIF, TIFF, BMP, HEIC | 50 МБ или 7680×7680 px |
+        | `video` | MP4, MOV, MKV, WEBM | 250 МБ |
+        | `audio` | MP3, WAV, M4A и др. | 256 МБ или 60 мин |
+        | `file` | TXT, DOC, PDF и др. | 4 ГБ |
+
+        `type=photo` deprecated — используйте `type=image`.
+
+        **Домены для загрузки:**
+        - `file` → `https://fu.oneme.ru`
+        - `image` → `https://iu.oneme.ru`
+        - `video`/`audio` → `https://vu.okcdn.ru`
+
+        После загрузки подождите перед отправкой сообщения, чтобы избежать ошибки `attachment.not.ready`.
+        Используйте экспоненциальную задержку при повторе.
+      tags: [ Uploads ]
+      parameters:
+        - name: type
+          in: query
+          required: true
+          description: Тип загружаемого файла
+          schema:
+            $ref: "#/components/schemas/UploadType"
+      responses:
+        "200":
+          description: Файл загружен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+                    description: URL для загрузки (без срока действия)
+                  token:
+                    type: string
+                    nullable: true
+                    description: 'Токен для `attachments.payload.token` в POST/PUT /messages'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /messages:
+    get:
+      operationId: getMessages
+      summary: Получение сообщений
+      description: Получает сообщения из чата или по ID сообщений.
+      tags: [ Messages ]
+      parameters:
+        - name: chat_id
+          in: query
+          required: false
+          description: |
+            ID чата для получения сообщений (обязателен, если `message_ids` не указан).
+            Возвращает сообщения в обратном порядке (новые первыми).
+          schema:
+            type: integer
+            format: int64
+        - name: message_ids
+          in: query
+          required: false
+          description: |
+            Список ID сообщений через запятую (обязателен, если `chat_id` не указан).
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: false
+          description: Unix timestamp — сообщения до этого времени
+          schema:
+            type: integer
+            format: int64
+        - name: to
+          in: query
+          required: false
+          description: Unix timestamp — сообщения с этого времени
+          schema:
+            type: integer
+            format: int64
+        - name: count
+          in: query
+          required: false
+          description: Количество сообщений (по умолчанию 50)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Message"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    post:
+      operationId: sendMessage
+      summary: Отправить сообщение
+      description: |
+        Отправляет сообщение в диалог, групповой чат или канал.
+
+        **Ограничение скорости:** макс. 2 сообщения в секунду на диалог/чат/канал.
+
+        **Параметры `user_id` / `chat_id` условные:** одно из них обязательно.
+
+        **Правила комбинирования вложений:**
+        - Видео и изображения можно комбинировать друг с другом и одной кнопкой — максимум 12 вложений
+        - Файл можно отправить только в комбинации с вложением с кнопками — максимум 1 файл + 1 вложение с кнопками
+
+        **Inline-клавиатура:** максимум 210 кнопок в 30 рядах, до 7 в ряде (кроме link/open_app/request_geo_location/request_contact — макс. 3).
+      tags: [ Messages ]
+      parameters:
+        - name: user_id
+          in: query
+          required: false
+          description: ID пользователя для сообщений в диалоге
+          schema:
+            type: integer
+            format: int64
+        - name: chat_id
+          in: query
+          required: false
+          description: ID чата для сообщений в групповом чате/канале
+          schema:
+            type: integer
+            format: int64
+        - name: disable_link_preview
+          in: query
+          required: false
+          description: 'Если `true`, отключает генерацию предпросмотра ссылок'
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewMessageBody"
+      responses:
+        "200":
+          description: Сообщение отправлено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    $ref: "#/components/schemas/Message"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    put:
+      operationId: editMessage
+      summary: Редактировать сообщение
+      description: |
+        Редактирует сообщение, отправленное ботом.
+
+        **Ограничение скорости:** макс. 2 редактирования в секунду на диалог/чат/канал.
+
+        **Ограничения на редактирование:**
+        - Диалоги: сообщения с inline_keyboard можно редактировать в любое время; остальные — только в течение 7 дней
+        - Групповые чаты и каналы: любые сообщения можно редактировать в любое время
+      tags: [ Messages ]
+      parameters:
+        - name: message_id
+          in: query
+          required: true
+          description: ID сообщения для редактирования
+          schema:
+            type: string
+            minLength: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewMessageBody"
+      responses:
+        "200":
+          description: Сообщение отредактировано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    delete:
+      operationId: deleteMessage
+      summary: Удалить сообщение
+      description: |
+        Удаляет сообщение из диалога, группового чата или канала.
+
+        **Ограничения:**
+        - Бот должен быть администратором с правом `delete`
+        - Диалоги: можно удалять только сообщения, отправленные самим ботом
+        - Групповые чаты: можно удалять любые сообщения
+        - Каналы: можно удалять любые сообщения
+
+        **Ограничение скорости:** макс. 2 удаления в секунду на диалог/чат/канал.
+      tags: [ Messages ]
+      parameters:
+        - name: message_id
+          in: query
+          required: true
+          description: ID сообщения для удаления
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: Сообщение удалено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /messages/{messageId}:
+    get:
+      operationId: getMessageById
+      summary: Получить сообщение
+      description: Получает одно сообщение по его ID.
+      tags: [ Messages ]
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          description: 'ID сообщения (`mid`)'
+          schema:
+            type: string
+            pattern: "[a-zA-Z0-9_-]+"
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /videos/{videoToken}:
+    get:
+      operationId: getVideoInfo
+      summary: Получить информацию о видео
+      description: Возвращает URL для воспроизведения и метаданные видео.
+      tags: [ Messages ]
+      parameters:
+        - name: videoToken
+          in: path
+          required: true
+          description: Токен видео-вложения
+          schema:
+            type: string
+            pattern: "[a-zA-Z0-9_-]+"
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoInfo"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /answers:
+    post:
+      operationId: sendAnswer
+      summary: Ответ на callback
+      description: |
+        Отвечает на нажатие callback-кнопки. Может обновить текущее сообщение и/или отправить одноразовое уведомление.
+
+        **Ограничение скорости:** макс. 2 ответа в секунду на диалог/чат/канал.
+      tags: [ Answers ]
+      parameters:
+        - name: callback_id
+          in: query
+          required: true
+          description: |
+            ID callback-кнопки из объекта `Update` с типом `message_callback`
+            (поле `updates[i].callback.callback_id`).
+          schema:
+            type: string
+            pattern: "^(?!\\s*$).+"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  $ref: "#/components/schemas/NewMessageBody"
+                  nullable: true
+                  description: Заполните для обновления текущего сообщения
+      responses:
+        "200":
+          description: Ответ отправлен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: |
+        Токен доступа бота. Передаётся в заголовке `Authorization: <token>`.
+        Передача токена через query-параметры больше не поддерживается.
+
+  parameters:
+    chatId:
+      name: chatId
+      in: path
+      required: true
+      description: ID группового чата или канала
+      schema:
+        type: integer
+        format: int64
+        pattern: "-?\\d+"
+
+  responses:
+    BadRequest:
+      description: Недействительный запрос (400)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Ошибка аутентификации (401)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Ресурс не найден (404)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    TooManyRequests:
+      description: Превышено количество запросов (429)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ServiceUnavailable:
+      description: Сервис недоступен (503)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    MethodNotAllowed:
+      description: Метод не разрешён (405) — например, отправка сообщений в неличный диалог без включённого `bot_can_write_to_pm`
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    # ─── Enums ────────────────────────────────────────────────
+    ChatType:
+      type: string
+      enum:
+        - chat
+        - channel
+        - dialog
+      description: Тип чата
+
+    ChatStatus:
+      type: string
+      enum:
+        - active
+        - removed
+        - left
+        - closed
+      description: Статус чата
+
+    SenderAction:
+      type: string
+      enum:
+        - typing_on
+        - sending_photo
+        - sending_video
+        - sending_audio
+        - sending_file
+      description: Тип действия бота
+
+    UploadType:
+      type: string
+      enum:
+        - image
+        - video
+        - audio
+        - file
+      description: Тип загружаемого файла
+
+    TextFormat:
+      type: string
+      enum:
+        - markdown
+        - html
+      description: |
+        Формат текста сообщения.
+
+        **Markdown:**
+        | Отображение | Синтаксис |
+        |---|---|
+        | курсив | `*emphasized*` или `_emphasized_` |
+        | жирный | `**strong**` или `__strong__` |
+        | зачёркнутый | `~~strikethrough~~` |
+        | подчёркнутый | `++underline++` |
+        | моноширинный | `` `code` `` |
+        | ссылка | `[text](url)` |
+        | @упоминание | `[Имя Фамилия](max://user/user_id)` |
+        | выделенный | `^^выделенный^^` |
+        | заголовок | `# заголовок` |
+        | цитата | `> цитата` |
+
+        **HTML:**
+        | Отображение | Тег |
+        |---|---|
+        | курсив | `<i>` или `<em>` |
+        | жирный | `<b>` или `<strong>` |
+        | зачёркнутый | `<del>` или `<s>` |
+        | подчёркнутый | `<ins>` или `<u>` |
+        | моноширинный | `<pre>` или `<code>` |
+        | ссылка | `<a href="url">text</a>` |
+        | @упоминание | `<a href="max://user/user_id">Имя Фамилия</a>` |
+        | выделенный | `<mark>text</mark>` |
+        | заголовок | `<h1>`..`<h4>` (все уровни одинаковые) |
+        | цитата | `<blockquote>text</blockquote>` |
+
+    ChatAdminPermission:
+      type: string
+      enum:
+        - read_all_messages
+        - add_remove_members
+        - add_admins
+        - change_chat_info
+        - pin_message
+        - write
+        - can_call
+        - edit_link
+        - edit
+        - delete
+        - view_stats
+      description: |
+        Права администратора чата/канала.
+
+        Описание:
+        - `read_all_messages` — чтение всех сообщений в канале или групповом чате
+        - `edit` — редактирование постов в каналах (недоступно для групповых чатов)
+        - `delete` — удаление постов (недоступно для групповых чатов)
+        - `write` — редактирование/удаление сообщений в группах, написание постов в каналах
+        - `pin_message` — закрепление сообщений
+        - `change_chat_info` — изменение информации о канале или групповом чате
+        - `add_remove_members` — добавление/удаление участников (для ботов: только чаты; для пользователей: только каналы)
+        - `add_admins` — добавление/удаление администраторов
+        - `edit_link` — редактирование ссылки группового чата (недоступно для каналов)
+        - `can_call` — звонки в групповом чате (недоступно для каналов)
+        - `view_stats` — просмотр статистики канала (только владелец, недоступно для групповых чатов)
+
+    UpdateType:
+      type: string
+      enum:
+        - bot_added
+        - bot_started
+        - bot_stopped
+        - bot_removed
+        - chat_title_changed
+        - dialog_cleared
+        - dialog_muted
+        - dialog_unmuted
+        - dialog_removed
+        - message_callback
+        - message_created
+        - message_edited
+        - message_removed
+        - user_added
+        - user_removed
+      description: Тип обновления (события)
+
+    AttachmentType:
+      type: string
+      enum:
+        - image
+        - video
+        - audio
+        - file
+        - sticker
+        - inline_keyboard
+        - location
+        - share
+      description: |
+        Тип вложения в сообщении.
+
+        - `image` — изображения (JPG, JPEG, PNG, GIF, TIFF, BMP, HEIC; до 50 МБ или 7680×7680 px)
+        - `video` — видео (MP4, MOV, MKV, WEBM; до 250 МБ)
+        - `audio` — аудио (MP3, WAV, M4A и др.; до 256 МБ или 60 мин)
+        - `file` — файлы (TXT, DOC, PDF и др.; до 4 ГБ)
+        - `sticker` — стикеры
+        - `inline_keyboard` — кнопки клавиатуры (до 210 кнопок в 30 рядах, до 7 в каждом; до 3 для link/open_app/request_geo_location/request_contact)
+        - `location` — геолокация
+        - `share` — медиафайлы с превью
+
+        `type=photo` deprecated — используйте `type=image`.
+
+        **Правила комбинирования вложений:**
+        - Видео и изображения можно комбинировать друг с другом и одной кнопкой — максимум 12 вложений
+        - Файл можно отправить только в комбинации с вложением с кнопками (не с изображением/видео) — максимум 1 файл + 1 вложение с кнопками
+        - Примеры допустимых комбинаций: 6 видео+5 изображений+1 кнопки; 12 видео; 12 изображений; 11 видео+1 кнопки; 1 файл+1 кнопки
+
+        **Для изображений** в качестве альтернативы токену можно использовать `url` — прямую ссылку на изображение. Для других медиафайлов такой способ недоступен.
+
+        Для загрузки медиафайлов (`image`, `video`, `audio`, `file`, `share`) предварительно используйте `POST /uploads` и передайте полученный `token`.
+
+    ButtonType:
+      type: string
+      enum:
+        - callback
+        - link
+        - request_contact
+        - request_geo_location
+        - open_app
+        - message
+        - clipboard
+      description: |
+        Тип кнопки inline-клавиатуры.
+
+        - `callback` — отправляет событие `message_callback` через Webhook/Long Polling
+        - `link` — открывает ссылку в новой вкладке (макс. 2048 символов в URL)
+        - `request_contact` — запрашивает контакт и номер телефона пользователя; сообщение с контактом содержит поле `hash` для верификации через `HMAC-SHA256(access_token, vcf_info)`
+        - `request_geo_location` — запрашивает местоположение пользователя
+        - `open_app` — открывает мини-приложение
+        - `message` — отправляет боту текстовое сообщение
+        - `clipboard` — копирует текст из свойства `payload` в буфер обмена
+
+    # ─── Base Objects ─────────────────────────────────────────
+    User:
+      type: object
+      description: Базовый объект пользователя/бота
+      properties:
+        user_id:
+          type: integer
+          format: int64
+          description: ID пользователя/бота
+        first_name:
+          type: string
+          description: Отображаемое имя
+        last_name:
+          type: string
+          nullable: true
+          description: Фамилия (не возвращается для ботов)
+        username:
+          type: string
+          nullable: true
+          description: Имя пользователя
+        is_bot:
+          type: boolean
+          description: '`true`, если это бот'
+        last_activity_time:
+          type: integer
+          format: int64
+          description: Время последней активности (Unix timestamp в миллисекундах)
+        name:
+          type: string
+          nullable: true
+          description: "**Deprecated**"
+
+    UserWithPhoto:
+      allOf:
+        - $ref: "#/components/schemas/User"
+        - type: object
+          description: Пользователь с аватаром и описанием
+          properties:
+            description:
+              type: string
+              nullable: true
+              description: Описание (макс. 16000 символов; null, если не задано)
+            avatar_url:
+              type: string
+              nullable: true
+              description: URL миниатюры аватара
+            full_avatar_url:
+              type: string
+              nullable: true
+              description: URL полноразмерного аватара
+
+    BotInfo:
+      allOf:
+        - $ref: "#/components/schemas/UserWithPhoto"
+        - type: object
+          description: Информация о боте (включая команды). Возвращается только методом GET /me.
+          properties:
+            commands:
+              type: array
+              nullable: true
+              description: Команды бота (макс. 32)
+              items:
+                $ref: "#/components/schemas/BotCommand"
+
+    BotCommand:
+      type: object
+      description: Команда бота
+      required:
+        - name
+        - description
+      properties:
+        name:
+          type: string
+          description: 'Имя команды (без `/`)'
+        description:
+          type: string
+          description: Описание команды
+
+    ChatMember:
+      allOf:
+        - $ref: "#/components/schemas/UserWithPhoto"
+        - type: object
+          description: Участник чата/канала с данными о членстве
+          properties:
+            last_access_time:
+              type: integer
+              format: int64
+              description: Время последней активности в чате (может быть неточным для суперчатов)
+            is_owner:
+              type: boolean
+              description: Является ли владельцем чата/канала
+            is_admin:
+              type: boolean
+              description: Является ли администратором чата/канала
+            join_time:
+              type: integer
+              format: int64
+              description: Дата вступления (Unix timestamp)
+            permissions:
+              type: array
+              nullable: true
+              description: Права администратора (только для администраторов)
+              items:
+                $ref: "#/components/schemas/ChatAdminPermission"
+            alias:
+              type: string
+              nullable: true
+              description: Алиас роли, отображаемый в настройках чата
+
+    ChatAdmin:
+      type: object
+      description: Данные для назначения администратора
+      required:
+        - user_id
+        - permissions
+      properties:
+        user_id:
+          type: integer
+          format: int64
+          description: ID пользователя/бота
+        permissions:
+          type: array
+          description: Права администратора
+          items:
+            $ref: "#/components/schemas/ChatAdminPermission"
+        alias:
+          type: string
+          nullable: true
+          description: Алиас роли
+
+    Image:
+      type: object
+      description: Изображение
+      properties:
+        url:
+          type: string
+          format: uri
+          description: URL изображения
+
+    Chat:
+      type: object
+      description: Информация о групповом чате или канале
+      properties:
+        chat_id:
+          type: integer
+          format: int64
+          description: ID чата/канала
+        type:
+          $ref: "#/components/schemas/ChatType"
+        status:
+          $ref: "#/components/schemas/ChatStatus"
+        title:
+          type: string
+          nullable: true
+          description: Название чата/канала (null для диалогов)
+        icon:
+          allOf:
+            - $ref: "#/components/schemas/Image"
+          nullable: true
+          description: Иконка чата
+        last_event_time:
+          type: integer
+          format: int64
+          description: Время последнего события (Unix timestamp в мс)
+        participants_count:
+          type: integer
+          format: int32
+          description: Количество участников (всегда 2 для диалогов)
+        owner_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: ID владельца
+        participants:
+          type: object
+          nullable: true
+          description: Участники с временем активности (null при списке чатов)
+        is_public:
+          type: boolean
+          description: Публичность (всегда false для диалогов)
+        link:
+          type: string
+          nullable: true
+          description: Ссылка на чат
+        description:
+          type: string
+          nullable: true
+          description: Описание чата/канала
+        dialog_with_user:
+          allOf:
+            - $ref: "#/components/schemas/UserWithPhoto"
+          nullable: true
+          description: Собеседник в диалоге (только для типа dialog)
+        messages_count:
+          type: integer
+          nullable: true
+          description: Количество сообщений
+        pinned_message:
+          allOf:
+            - $ref: "#/components/schemas/Message"
+          nullable: true
+          description: Закреплённое сообщение (только при запросе конкретного чата)
+
+    Recipient:
+      type: object
+      description: Получатель сообщения (пользователь или чат)
+      properties:
+        chat_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: ID чата (если сообщение отправлено в чат)
+        user_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: ID пользователя (если сообщение отправлено в диалог)
+
+    MessageBody:
+      type: object
+      description: Содержимое сообщения (текст и вложения). Может быть null, если только пересланное сообщение.
+      properties:
+        mid:
+          type: string
+          description: ID сообщения
+        seq:
+          type: integer
+          format: int64
+          description: Порядковый номер
+        text:
+          type: string
+          nullable: true
+          description: Текст сообщения (макс. 4000 символов)
+        attachments:
+          type: array
+          nullable: true
+          description: Вложения сообщения
+          items:
+            $ref: "#/components/schemas/Attachment"
+        caption:
+          type: string
+          nullable: true
+          description: Подпись к вложению
+        format:
+          $ref: "#/components/schemas/TextFormat"
+
+    LinkedMessage:
+      type: object
+      description: Пересланное или ответное сообщение
+      properties:
+        type:
+          type: string
+          enum:
+            - forwarded
+            - reply
+          description: Тип связанного сообщения
+        sender:
+          type: integer
+          format: int64
+          description: ID отправителя
+        mid:
+          type: string
+          description: ID связанного сообщения
+        chat:
+          type: string
+          nullable: true
+          description: ID чата, из которого переслано сообщение
+
+    MessageStat:
+      type: object
+      description: Статистика сообщения (только для постов в каналах)
+      properties:
+        views:
+          type: integer
+          description: Количество просмотров
+
+    Message:
+      type: object
+      description: Сообщение в чате
+      properties:
+        sender:
+          allOf:
+            - $ref: "#/components/schemas/User"
+          nullable: true
+          description: Пользователь, отправивший сообщение
+        recipient:
+          $ref: "#/components/schemas/Recipient"
+        timestamp:
+          type: integer
+          format: int64
+          description: Время создания (Unix timestamp в мс)
+        link:
+          allOf:
+            - $ref: "#/components/schemas/LinkedMessage"
+          nullable: true
+          description: Связанное сообщение (пересылка или ответ)
+        body:
+          allOf:
+            - $ref: "#/components/schemas/MessageBody"
+          nullable: true
+          description: Содержимое сообщения (может быть null для пересылок)
+        stat:
+          allOf:
+            - $ref: "#/components/schemas/MessageStat"
+          nullable: true
+          description: Статистика (только для постов в каналах)
+        url:
+          type: string
+          nullable: true
+          description: Публичный URL поста в канале (не для диалогов/групп)
+
+    NewMessageBody:
+      type: object
+      description: |
+        Тело нового сообщения для создания/редактирования.
+
+        **Форматирование текста:**
+        - `markdown` — поддерживает: **жирный**, _курсив_, [ссылки](url), `моноширинный`, ~зачёркнутый~, ||спойлер||, [mentions](tg://resolve?domain=...)
+        - `html` — поддерживает: `<b>жирный</b>`, `<i>курсив</i>`, `<a href="url">ссылки</a>`, `<code>моноширинный</code>`, `<s>зачёркнутый</s>`, `<tg-spoiler>спойлер</tg-spoiler>`, `<mention user-id="12345">mentions</mention>`, `<pre>preformatted</pre>`, `<pre><code class="language-python">код</code></pre>
+
+        **Правила комбинирования вложений:**
+        - Видео и изображения можно комбинировать друг с другом и одной кнопкой — максимум 12 вложений
+        - Файл можно отправить только в комбинации с вложением с кнопками — максимум 1 файл + 1 вложение с кнопками
+        - Примеры допустимых комбинаций: 6 видео+5 изображений+1 кнопки; 12 видео; 12 изображений; 11 видео+1 кнопки; 1 файл+1 кнопки
+
+        **Загрузка медиафайлов:**
+        - `POST /uploads` — для `image`, `video`, `audio`, `file`, `share` (возвращает токен)
+        - `type=photo` deprecated — используйте `type=image`
+        - `video_size` deprecated — используйте `duration` в ответе `POST /uploads`
+        - Для `image` также допустим прямой URL в поле `payload.url`
+
+        **Отправка видео/аудио:**
+        - Загрузите файл через `POST /uploads`
+        - В `POST /uploads` вызовите `send_push=true` для автоматической отправки всем подписчикам
+      properties:
+        text:
+          type: string
+          nullable: true
+          description: Текст сообщения (макс. 4000 символов)
+          maxLength: 4000
+        attachments:
+          type: array
+          nullable: true
+          description: |
+            Вложения. `null` = без изменений; пустой массив = удалить все вложения
+          items:
+            $ref: "#/components/schemas/AttachmentRequest"
+        link:
+          allOf:
+            - $ref: "#/components/schemas/NewMessageLink"
+          nullable: true
+          description: Ссылка на другое сообщение
+        notify:
+          type: boolean
+          default: true
+          description: Уведомлять ли участников
+        format:
+          $ref: "#/components/schemas/TextFormat"
+
+    NewMessageLink:
+      type: object
+      description: Ссылка на другое сообщение
+      properties:
+        type:
+          type: string
+          enum:
+            - reply
+            - forward
+          description: Тип ссылки
+        mid:
+          type: string
+          description: ID связанного сообщения
+        chat:
+          type: string
+          nullable: true
+          description: ID чата (для пересылок из другого чата)
+
+    Attachment:
+      type: object
+      description: Вложение в сообщении (используется в MessageBody при чтении)
+      properties:
+        type:
+          $ref: "#/components/schemas/AttachmentType"
+        payload:
+          type: object
+          nullable: true
+          description: Payload вложения (зависит от типа)
+          oneOf:
+            - $ref: "#/components/schemas/ImageAttachmentPayload"
+            - $ref: "#/components/schemas/VideoAttachmentPayload"
+            - $ref: "#/components/schemas/AudioAttachmentPayload"
+            - $ref: "#/components/schemas/FileAttachmentPayload"
+            - $ref: "#/components/schemas/ContactAttachmentPayload"
+            - $ref: "#/components/schemas/LocationAttachmentPayload"
+            - $ref: "#/components/schemas/InlineKeyboardAttachmentPayload"
+          discriminator:
+            propertyName: token
+      required: [ type ]
+
+    ImageAttachmentPayload:
+      type: object
+      description: Payload изображения (JPG, JPEG, PNG, GIF, TIFF, BMP, HEIC; до 50 МБ или 7680×7680 px — оба критерия должны выполняться)
+      properties:
+        url:
+          type: string
+          description: URL изображения
+        token:
+          type: string
+          description: Токен медиафайла
+
+    VideoAttachmentPayload:
+      type: object
+      description: Payload видео
+      properties:
+        url:
+          $ref: "#/components/schemas/VideoUrls"
+        token:
+          type: string
+          description: Токен медиафайла
+        duration:
+          type: integer
+          nullable: true
+          description: Длительность в секундах
+
+    AudioAttachmentPayload:
+      type: object
+      description: Payload аудио
+      properties:
+        url:
+          type: string
+          description: URL аудио
+        token:
+          type: string
+          description: Токен медиафайла
+        duration:
+          type: integer
+          nullable: true
+          description: Длительность в секундах
+
+    FileAttachmentPayload:
+      type: object
+      description: Payload файла
+      properties:
+        url:
+          type: string
+          description: URL файла
+        token:
+          type: string
+          description: Токен медиафайла
+        file_size:
+          type: integer
+          description: Размер файла в байтах
+
+    ContactAttachmentPayload:
+      type: object
+      description: Payload контакта (отправляемого через request_contact)
+      properties:
+        vcf_info:
+          type: string
+          nullable: true
+          description: Информация контакта в формате vCard. Перед хешированием необходимо преобразовать `\r\n` в реальные переносы строк
+        vcf_phone:
+          type: string
+          nullable: true
+          description: Номер телефона контакта
+        max_info:
+          type: object
+          nullable: true
+          description: Дополнительная информация о пользователе
+        hash:
+          type: string
+          description: |
+            Хеш для проверки подлинности контакта.
+            Вычисляется как: `HMAC-SHA256(access_token, vcf_info)`
+            где `access_token` — токен бота, а `vcf_info` — информация о контакте в формате vCard с заменёнными `\r\n` на реальные переносы строк.
+            Если значения совпадают — пользователь поделился номером, привязанным к его аккаунту в МАКС.
+
+    LocationAttachmentPayload:
+      type: object
+      description: Payload геолокации (отправляемой через request_geo_location)
+      properties:
+        latitude:
+          type: number
+          format: double
+          description: Широта
+        longitude:
+          type: number
+          format: double
+          description: Долгота
+
+    InlineKeyboardAttachmentPayload:
+      type: object
+      description: Inline-клавиатура
+      properties:
+        rows:
+          type: array
+          description: Ряды кнопок (каждый элемент — массив кнопок; например `[[btn1, btn2], [btn3]]`)
+          items:
+            $ref: "#/components/schemas/InlineKeyboardButtonRow"
+
+    InlineKeyboardButtonRow:
+      type: object
+      description: Ряд кнопок inline-клавиатуры
+      properties:
+        buttons:
+          type: array
+          description: Кнопки в ряду (макс. 7)
+          items:
+            $ref: "#/components/schemas/InlineKeyboardButton"
+
+    InlineKeyboardButton:
+      type: object
+      description: |
+        Кнопка inline-клавиатуры.
+
+        **Ограничения:**
+        - Максимум 210 кнопок в 30 рядах
+        - Максимум 7 кнопок в ряде (кроме типов link, open_app, request_geo_location, request_contact — макс. 3 в ряде)
+        - Допускаются комбинации с `type=sticker`
+      properties:
+        type:
+          $ref: "#/components/schemas/ButtonType"
+        text:
+          type: string
+          description: Текст кнопки (2048 символов макс., поддерживает форматирование)
+        payload:
+          type: string
+          nullable: true
+          description: |
+            Пользовательские данные, возвращаемые в `callback`.
+            Для `clipboard` — текст для копирования.
+            Максимум 8 КБ.
+
+            Если поле отсутствует, `callback` возвращается как `null`.
+        url:
+          type: string
+          nullable: true
+          description: Ссылка (для типа `link`; макс. 2048 символов)
+        intent:
+          type: string
+          nullable: true
+          description: |
+            Интент для `request_geo_location`:
+            - `sendOnce` — однократная отправка
+            - `sendLive` — отправка текущего местоположения в реальном времени
+        app_data:
+          type: string
+          nullable: true
+          description: Данные для открытия мини-приложения (для типа `open_app`)
+      required: [ type, text ]
+
+    AttachmentRequest:
+      type: object
+      description: Запрос на вложение
+      properties:
+        type:
+          $ref: "#/components/schemas/AttachmentType"
+        payload:
+          type: object
+          nullable: true
+          description: Payload вложения
+          properties:
+            token:
+              type: string
+              nullable: true
+              description: Токен медиафайла (из ответа POST /uploads)
+            url:
+              type: string
+              nullable: true
+              description: URL медиафайла
+            rows:
+              type: array
+              nullable: true
+              description: Ряды inline-клавиатуры
+              items:
+                $ref: "#/components/schemas/InlineKeyboardButtonRow"
+      required: [ type ]
+
+    VideoUrls:
+      type: object
+      description: URL для воспроизведения/скачивания видео
+      properties:
+        mp4:
+          type: string
+          nullable: true
+          description: URL для скачивания в формате MP4
+        preview:
+          type: string
+          nullable: true
+          description: URL превью видео
+
+    VideoInfo:
+      type: object
+      description: Информация о видео
+      properties:
+        token:
+          type: string
+          description: Токен видео-вложения
+        urls:
+          allOf:
+            - $ref: "#/components/schemas/VideoUrls"
+          nullable: true
+          description: URL для скачивания/воспроизведения (null, если недоступны)
+        thumbnail:
+          allOf:
+            - $ref: "#/components/schemas/PhotoAttachmentPayload"
+          nullable: true
+          description: Миниатюра видео
+        width:
+          type: integer
+          description: Ширина видео
+        height:
+          type: integer
+          description: Высота видео
+        duration:
+          type: integer
+          description: Длительность в секундах
+
+    PhotoAttachmentPayload:
+      type: object
+      description: Payload фото-вложения
+      properties:
+        url:
+          type: string
+          format: uri
+          description: URL изображения
+        width:
+          type: integer
+          description: Ширина
+        height:
+          type: integer
+          description: Высота
+
+    Subscription:
+      type: object
+      description: Подписка на webhook
+      properties:
+        url:
+          type: string
+          format: uri
+          description: URL webhook
+        update_types:
+          type: array
+          nullable: true
+          description: Типы обновлений
+          items:
+            type: string
+
+    FailedUserDetails:
+      type: object
+      description: Подробности ошибки при добавлении пользователя
+      properties:
+        user_id:
+          type: integer
+          format: int64
+          description: ID пользователя
+        error:
+          type: string
+          description: Описание ошибки
+
+    Update:
+      type: object
+      description: |
+        Объект обновления (события) в чатах/каналах.
+        Возвращается через Webhook (POST /subscriptions) или Long Polling (GET /updates).
+
+        **Типы событий:**
+
+        | Тип | Описание |
+        |-----|----------|
+        | `bot_added` | Бот добавлен в чат/канал |
+        | `bot_started` | Пользователь начал/возобновил разговор с ботом |
+        | `bot_stopped` | Пользователь остановил/удалил бота (с `dialog_removed` при удалении) |
+        | `bot_removed` | Бот удалён из чата/канала |
+        | `chat_title_changed` | Название чата/канала изменено |
+        | `dialog_cleared` | Пользователь очистил историю диалога |
+        | `dialog_muted` | Пользователь отключил уведомления диалога |
+        | `dialog_unmuted` | Пользователь включил уведомления диалога |
+        | `dialog_removed` | Пользователь удалил диалог (также вызывает `bot_stopped`) |
+        | `message_callback` | Пользователь нажал кнопку |
+        | `message_created` | Новое сообщение или пост в канале |
+        | `message_edited` | Сообщение отредактировано |
+        | `message_removed` | Сообщение удалено |
+        | `user_added` | Новый пользователь вступил в чат/канал |
+        | `user_removed` | Пользователь удалён/покинул чат/канал |
+      properties:
+        update_type:
+          $ref: "#/components/schemas/UpdateType"
+        timestamp:
+          type: integer
+          format: int64
+          description: Время события (Unix timestamp в мс)
+        chat_id:
+          type: integer
+          format: int64
+          description: ID чата, в котором произошло событие
+        user:
+          allOf:
+            - $ref: "#/components/schemas/User"
+          description: Пользователь, связанный с событием
+        is_channel:
+          type: boolean
+          description: '`true`, если бот добавлен в канал (не групповой чат)'
+          nullable: true
+        message:
+          allOf:
+            - $ref: "#/components/schemas/Message"
+          nullable: true
+          description: Сообщение (для событий message_created, message_edited, message_removed)
+        callback:
+          type: object
+          nullable: true
+          description: Данные callback-кнопки (для события message_callback)
+          properties:
+            callback_id:
+              type: string
+              description: ID callback-кнопки
+            payload:
+              type: string
+              nullable: true
+              description: Payload кнопки
+            message:
+              allOf:
+                - $ref: "#/components/schemas/Message"
+              description: Сообщение с кнопкой
+
+    SuccessResponse:
+      type: object
+      description: Стандартный ответ об успехе/ошибке
+      properties:
+        success:
+          type: boolean
+          description: '`true`, если операция выполнена успешно'
+        message:
+          type: string
+          nullable: true
+          description: Описание ошибки (при неуспехе)
+
+    ErrorResponse:
+      type: object
+      description: Ответ об ошибке
+      properties:
+        code:
+          type: integer
+          description: HTTP-код ошибки
+        message:
+          type: string
+          description: Описание ошибки
+        error:
+          type: string
+          nullable: true
+          description: Дополнительная информация об ошибке
