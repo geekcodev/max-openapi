@@ -969,6 +969,20 @@ ChatMember.
 
 ---
 
+### Объект Recipient
+
+Получатель сообщения (пользователь или чат).
+
+**Поля:**
+
+| Поле        | Тип               | Описание                                                 |
+|-------------|-------------------|----------------------------------------------------------|
+| `chat_id`   | integer `<int64>` | ID чата (если сообщение отправлено в чат)                |
+| `chat_type` | string Nullable   | Тип чата (например, `"dialog"`); набор значений уточнить |
+| `user_id`   | integer `<int64>` | ID пользователя (если сообщение отправлено в диалог)     |
+
+---
+
 ### Объект Message
 
 Сообщение в чате.
@@ -1027,15 +1041,48 @@ ChatMember.
 | `user_added`         | Новый пользователь вступил в чат/канал                               |
 | `user_removed`       | Пользователь удалён из/покинул чат/канал                             |
 
-**Поля (пример для `bot_added`):**
+**Набор полей зависит от `update_type`.** Все поля необязательные — API отдаёт только поля, относящиеся к конкретному
+типу события.
 
-| Поле          | Тип               | Описание                                               |
-|---------------|-------------------|--------------------------------------------------------|
-| `update_type` | string            | Тип события                                            |
-| `timestamp`   | integer `<int64>` | Время события (Unix, мс)                               |
-| `chat_id`     | integer `<int64>` | ID чата (где произошло событие)                        |
-| `user`        | object User       | Пользователь, участвующий в событии                    |
-| `is_channel`  | boolean           | `true`, если бот добавлен в канал (не в групповой чат) |
+**Поля по типам событий:**
+
+| Тип события          | Поля                                                         |
+|----------------------|--------------------------------------------------------------|
+| `bot_added`          | `timestamp`, `chat_id`, `user`, `is_channel`                 |
+| `bot_started`        | `timestamp`, `chat_id`, `user`, `payload`, `user_locale`     |
+| `bot_stopped`        | `timestamp`, `chat_id`, `user`, `user_locale`                |
+| `bot_removed`        | `timestamp`, `chat_id`, `user`, `is_channel`                 |
+| `chat_title_changed` | `timestamp`, `chat_id`, `user`, `title`                      |
+| `dialog_cleared`     | `timestamp`, `chat_id`, `user`, `user_locale`                |
+| `dialog_muted`       | `timestamp`, `chat_id`, `user`, `muted_until`, `user_locale` |
+| `dialog_unmuted`     | `timestamp`, `chat_id`, `user`, `user_locale`                |
+| `dialog_removed`     | `timestamp`, `chat_id`, `user`, `user_locale`                |
+| `message_callback`   | `timestamp`, `callback`, `user_locale`                       |
+| `message_created`    | `timestamp`, `message`, `user_locale`                        |
+| `message_edited`     | `timestamp`, `message`                                       |
+| `message_removed`    | `timestamp`, `message_id`, `chat_id`, `user_id`              |
+| `user_added`         | `timestamp`, `chat_id`, `user`, `inviter_id`, `is_channel`   |
+| `user_removed`       | `timestamp`, `chat_id`, `user`, `admin_id`, `is_channel`     |
+
+**Описание полей:**
+
+| Поле          | Тип                        | Описание                                                                                                                                                                                                                               |
+|---------------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `update_type` | string                     | Тип события                                                                                                                                                                                                                            |
+| `timestamp`   | integer `<int64>`          | Время события (Unix, мс)                                                                                                                                                                                                               |
+| `chat_id`     | integer `<int64>`          | ID чата/диалога, где произошло событие. Для `message_created`/`message_edited`/`message_callback` на верхнем уровне отсутствует — источник `message.recipient.chat_id` (для `message_callback` — `callback.message.recipient.chat_id`) |
+| `user`        | object User                | Пользователь, связанный с событием. Для `message_created`/`message_edited` на верхнем уровне отсутствует — источник `message.sender` (для `message_callback` — `callback.message.sender`)                                              |
+| `user_locale` | string Nullable            | Текущий язык пользователя в формате IETF BCP 47 (например, `"ru"`)                                                                                                                                                                     |
+| `is_channel`  | boolean                    | `true`, если событие произошло в канале (а не в чате)                                                                                                                                                                                  |
+| `payload`     | string Nullable            | Дополнительные данные из диплинков, переданные при запуске бота. До 512 символов (для `bot_started`)                                                                                                                                   |
+| `title`       | string                     | Новое название чата (для `chat_title_changed`)                                                                                                                                                                                         |
+| `muted_until` | integer `<int64>`          | Время, до которого диалог был отключён (Unix, мс; для `dialog_muted`)                                                                                                                                                                  |
+| `message`     | object Message Nullable    | Сообщение (для `message_created`, `message_edited`)                                                                                                                                                                                    |
+| `message_id`  | string                     | ID удалённого сообщения (для `message_removed`)                                                                                                                                                                                        |
+| `user_id`     | integer `<int64>`          | Пользователь, удаливший сообщение (для `message_removed`)                                                                                                                                                                              |
+| `inviter_id`  | integer `<int64>` Nullable | Пользователь, добавивший нового пользователя в чат. Может быть null, если присоединение по ссылке (для `user_added`)                                                                                                                   |
+| `admin_id`    | integer `<int64>` Nullable | Администратор, удаливший пользователя из чата. Может быть null, если пользователь покинул чат сам (для `user_removed`)                                                                                                                 |
+| `callback`    | object Callback            | Данные callback-кнопки: `callback_id`, `payload`, `message` (Message Nullable — может быть null, если удалено). Для `message_callback`                                                                                                 |
 
 ---
 
@@ -1167,8 +1214,8 @@ MAX пользователя. Это делает контакт пригодн�
 > **Важно:** перед хэшированием преобразуйте символы `\r\n` в `vcf_info` в реальные переносы строк.
 
 > **Использование данных:** данные контакта, полученные через `request_contact`, можно использовать только для
-> взаимодействия с текущим чат-ботом (например, регистрация в программе лояльности, проверка статуса заказа, идентификация
-> в сервисе бота).
+> взаимодействия с текущим чат-ботом (например, регистрация в программе лояльности, проверка статуса заказа,
+> идентификация в сервисе бота).
 
 ---
 

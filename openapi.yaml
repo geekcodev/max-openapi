@@ -1778,6 +1778,10 @@ components:
           format: int64
           nullable: true
           description: ID чата (если сообщение отправлено в чат)
+        chat_type:
+          type: string
+          nullable: true
+          description: Тип чата (например, "dialog"); набор значений уточнить по API
         user_id:
           type: integer
           format: int64
@@ -2251,6 +2255,29 @@ components:
         | `message_removed` | Сообщение удалено |
         | `user_added` | Новый пользователь вступил в чат/канал |
         | `user_removed` | Пользователь удалён/покинул чат/канал |
+
+        Набор полей зависит от `update_type`. Поля не обязательны — реальный API отдаёт
+        только поля, относящиеся к конкретному типу события.
+
+        **Поля по типам событий:**
+
+        | Тип события | Поля |
+        |-------------|------|
+        | `bot_added` | `timestamp`, `chat_id`, `user`, `is_channel` |
+        | `bot_started` | `timestamp`, `chat_id`, `user`, `payload`, `user_locale` |
+        | `bot_stopped` | `timestamp`, `chat_id`, `user`, `user_locale` |
+        | `bot_removed` | `timestamp`, `chat_id`, `user`, `is_channel` |
+        | `chat_title_changed` | `timestamp`, `chat_id`, `user`, `title` |
+        | `dialog_cleared` | `timestamp`, `chat_id`, `user`, `user_locale` |
+        | `dialog_muted` | `timestamp`, `chat_id`, `user`, `muted_until`, `user_locale` |
+        | `dialog_unmuted` | `timestamp`, `chat_id`, `user`, `user_locale` |
+        | `dialog_removed` | `timestamp`, `chat_id`, `user`, `user_locale` |
+        | `message_callback` | `timestamp`, `callback`, `user_locale` |
+        | `message_created` | `timestamp`, `message`, `user_locale` |
+        | `message_edited` | `timestamp`, `message` |
+        | `message_removed` | `timestamp`, `message_id`, `chat_id`, `user_id` |
+        | `user_added` | `timestamp`, `chat_id`, `user`, `inviter_id`, `is_channel` |
+        | `user_removed` | `timestamp`, `chat_id`, `user`, `admin_id`, `is_channel` |
       properties:
         update_type:
           $ref: "#/components/schemas/UpdateType"
@@ -2258,23 +2285,59 @@ components:
           type: integer
           format: int64
           description: Время события (Unix timestamp в мс)
+        user_locale:
+          type: string
+          nullable: true
+          description: Текущий язык пользователя в формате IETF BCP 47 (например, "ru")
         chat_id:
           type: integer
           format: int64
-          description: ID чата, в котором произошло событие
+          description: ID чата/диалога, в котором произошло событие. Для message_created, message_edited, message_callback отсутствует на верхнем уровне — источник message.recipient.chat_id (для message_callback — callback.message.recipient.chat_id).
         user:
           allOf:
             - $ref: "#/components/schemas/User"
-          description: Пользователь, связанный с событием
+          description: Пользователь, связанный с событием. Присутствует для bot_*, dialog_*, user_*. Для message_created, message_edited отсутствует на верхнем уровне — источник message.sender (для message_callback — callback.message.sender).
         is_channel:
           type: boolean
-          description: '`true`, если бот добавлен в канал (не групповой чат)'
+          description: '`true`, если событие произошло в канале (а не в чате)'
           nullable: true
+        title:
+          type: string
+          nullable: true
+          description: Новое название чата (для события chat_title_changed)
+        payload:
+          type: string
+          nullable: true
+          description: Дополнительные данные из диплинков, переданные при запуске бота. До 512 символов (для события bot_started)
+        muted_until:
+          type: integer
+          format: int64
+          nullable: true
+          description: Время, до которого диалог был отключён (Unix timestamp в мс, для события dialog_muted)
+        message_id:
+          type: string
+          nullable: true
+          description: ID удалённого сообщения (для события message_removed)
+        user_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: Пользователь, удаливший сообщение (для события message_removed)
+        inviter_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: Пользователь, добавивший нового пользователя в чат. Может быть null, если пользователь присоединился по ссылке (для события user_added)
+        admin_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: Администратор, удаливший пользователя из чата. Может быть null, если пользователь покинул чат сам (для события user_removed)
         message:
           allOf:
             - $ref: "#/components/schemas/Message"
           nullable: true
-          description: Сообщение (для событий message_created, message_edited, message_removed)
+          description: Сообщение (для событий message_created, message_edited; для message_callback — внутри callback.message)
         callback:
           type: object
           nullable: true
@@ -2290,7 +2353,8 @@ components:
             message:
               allOf:
                 - $ref: "#/components/schemas/Message"
-              description: Сообщение с кнопкой
+              nullable: true
+              description: Изначальное сообщение с встроенной клавиатурой. Может быть null, если оно было удалено к моменту получения события
 
     SuccessResponse:
       type: object
