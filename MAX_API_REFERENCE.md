@@ -317,7 +317,7 @@ webhook-событий и вести собственное хранилище.
 | `last_access_time`   | integer `<int64>`              | Последняя активность в этом чате               |
 | `is_owner`           | boolean                        | Владелец чата/канала                           |
 | `is_admin`           | boolean                        | Администратор чата/канала                      |
-| `join_time`          | integer `<int64>`              | Дата вступления (Unix)                         |
+| `join_time`          | integer `<int64>`              | Дата вступления (Unix, мс)                     |
 | `permissions`        | ChatAdminPermission[] Nullable | Права администратора (только для админов)      |
 | `alias`              | string optional                | Псевдоним роли, отображаемый в настройках чата |
 
@@ -931,7 +931,7 @@ ChatMember.
 | `last_access_time` | integer `<int64>`              | Последняя активность в чате (может быть устаревшей для суперчатов) |
 | `is_owner`         | boolean                        | Владелец чата/канала                                               |
 | `is_admin`         | boolean                        | Администратор чата/канала                                          |
-| `join_time`        | integer `<int64>`              | Дата вступления (Unix)                                             |
+| `join_time`        | integer `<int64>`              | Дата вступления (Unix, мс)                                         |
 | `permissions`      | ChatAdminPermission[] Nullable | Права администратора (только для администраторов)                  |
 | `alias`            | string optional                | Псевдоним роли для отображения в настройках чата                   |
 
@@ -1083,6 +1083,258 @@ ChatMember.
 | `inviter_id`  | integer `<int64>` Nullable | Пользователь, добавивший нового пользователя в чат. Может быть null, если присоединение по ссылке (для `user_added`)                                                                                                                   |
 | `admin_id`    | integer `<int64>` Nullable | Администратор, удаливший пользователя из чата. Может быть null, если пользователь покинул чат сам (для `user_removed`)                                                                                                                 |
 | `callback`    | object Callback            | Данные callback-кнопки: `callback_id`, `payload`, `message` (Message Nullable — может быть null, если удалено). Для `message_callback`                                                                                                 |
+
+**Примеры событий:**
+
+Примеры составлены по таблице «Поля по типам событий». `bot_added` соответствует примеру из официальной документации,
+остальные — иллюстративные.
+
+```json
+{
+  "update_type": "bot_added",
+  "timestamp": 1755000000000,
+  "chat_id": 123456789,
+  "user": {
+    "user_id": 1000000001,
+    "first_name": "Иван",
+    "last_name": "Иванов",
+    "username": "ivan",
+    "is_bot": false
+  },
+  "is_channel": false
+}
+```
+
+```json
+{
+  "update_type": "bot_started",
+  "timestamp": 1755000001000,
+  "chat_id": 123456789,
+  "user": {
+    "user_id": 1000000001,
+    "first_name": "Иван",
+    "username": "ivan",
+    "is_bot": false
+  },
+  "payload": "/start promo_2026",
+  "user_locale": "ru"
+}
+```
+
+```json
+{
+  "update_type": "bot_stopped",
+  "timestamp": 1755000002000,
+  "chat_id": 123456789,
+  "user": {
+    "user_id": 1000000001,
+    "first_name": "Иван",
+    "username": "ivan",
+    "is_bot": false
+  },
+  "user_locale": "ru"
+}
+```
+
+```json
+{
+  "update_type": "bot_removed",
+  "timestamp": 1755000003000,
+  "chat_id": 987654321,
+  "user": {
+    "user_id": 1000000002,
+    "first_name": "Пётр",
+    "is_bot": false
+  },
+  "is_channel": false
+}
+```
+
+```json
+{
+  "update_type": "chat_title_changed",
+  "timestamp": 1755000004000,
+  "chat_id": 987654321,
+  "user": {
+    "user_id": 1000000002,
+    "first_name": "Пётр",
+    "is_bot": false
+  },
+  "title": "Новая команда"
+}
+```
+
+```json
+{
+  "update_type": "dialog_cleared",
+  "timestamp": 1755000005000,
+  "chat_id": 123456789,
+  "user": {
+    "user_id": 1000000001,
+    "first_name": "Иван",
+    "is_bot": false
+  },
+  "user_locale": "ru"
+}
+```
+
+```json
+{
+  "update_type": "dialog_muted",
+  "timestamp": 1755000006000,
+  "chat_id": 123456789,
+  "user": {
+    "user_id": 1000000001,
+    "first_name": "Иван",
+    "is_bot": false
+  },
+  "muted_until": 1755086400000,
+  "user_locale": "ru"
+}
+```
+
+```json
+{
+  "update_type": "dialog_unmuted",
+  "timestamp": 1755000007000,
+  "chat_id": 123456789,
+  "user": {
+    "user_id": 1000000001,
+    "first_name": "Иван",
+    "is_bot": false
+  },
+  "user_locale": "ru"
+}
+```
+
+```json
+{
+  "update_type": "dialog_removed",
+  "timestamp": 1755000008000,
+  "chat_id": 123456789,
+  "user": {
+    "user_id": 1000000001,
+    "first_name": "Иван",
+    "is_bot": false
+  },
+  "user_locale": "ru"
+}
+```
+
+```json
+{
+  "update_type": "message_callback",
+  "timestamp": 1755000009000,
+  "callback": {
+    "callback_id": "btn_order_1",
+    "payload": "order:42",
+    "message": {
+      "sender": {
+        "user_id": 1000000001,
+        "first_name": "Иван",
+        "is_bot": false
+      },
+      "recipient": {
+        "chat_id": 123456789,
+        "chat_type": "dialog"
+      },
+      "timestamp": 1754999400000,
+      "body": {
+        "mid": "mid_20260814_001",
+        "text": "Заказ пиццы"
+      }
+    }
+  },
+  "user_locale": "ru"
+}
+```
+
+```json
+{
+  "update_type": "message_created",
+  "timestamp": 1755000010000,
+  "message": {
+    "sender": {
+      "user_id": 1000000001,
+      "first_name": "Иван",
+      "is_bot": false
+    },
+    "recipient": {
+      "chat_id": 123456789,
+      "chat_type": "dialog"
+    },
+    "timestamp": 1755000010000,
+    "body": {
+      "mid": "mid_20260814_002",
+      "text": "Привет!"
+    }
+  },
+  "user_locale": "ru"
+}
+```
+
+```json
+{
+  "update_type": "message_edited",
+  "timestamp": 1755000011000,
+  "message": {
+    "sender": {
+      "user_id": 1000000001,
+      "first_name": "Иван",
+      "is_bot": false
+    },
+    "recipient": {
+      "chat_id": 123456789,
+      "chat_type": "dialog"
+    },
+    "timestamp": 1755000010000,
+    "body": {
+      "mid": "mid_20260814_002",
+      "text": "Привет! (исправлено)"
+    }
+  }
+}
+```
+
+```json
+{
+  "update_type": "message_removed",
+  "timestamp": 1755000012000,
+  "message_id": "mid_20260814_002",
+  "chat_id": 123456789,
+  "user_id": 1000000001
+}
+```
+
+```json
+{
+  "update_type": "user_added",
+  "timestamp": 1755000013000,
+  "chat_id": 987654321,
+  "user": {
+    "user_id": 1000000003,
+    "first_name": "Мария",
+    "is_bot": false
+  },
+  "inviter_id": 1000000002,
+  "is_channel": false
+}
+```
+
+```json
+{
+  "update_type": "user_removed",
+  "timestamp": 1755000014000,
+  "chat_id": 987654321,
+  "user": {
+    "user_id": 1000000003,
+    "first_name": "Мария",
+    "is_bot": false
+  },
+  "admin_id": 1000000002,
+  "is_channel": false
+}
+```
 
 ---
 

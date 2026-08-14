@@ -16,6 +16,7 @@ API MAX — это интерфейс, который позволяет бот�
 - Добавьте сертификат Минцифры в список доверенных.
 - HTTP вебхуки больше не поддерживаются — используйте HTTPS.
 - Long Polling ограничен по скорости и сроку хранения событий — не подходит для production.
+- Лимит запросов: 30 RPS на `platform-api2.max.ru`.
 
 ## Ключевые факты
 
@@ -24,7 +25,8 @@ API MAX — это интерфейс, который позволяет бот�
 | **Base URL**             | `https://platform-api2.max.ru`                                                                             |
 | **Авторизация**          | заголовок `Authorization: <access_token>` (передача токена через query-параметры больше не поддерживается) |
 | **Версия спецификации**  | OpenAPI 3.1.0                                                                                              |
-| **Последнее обновление** | август 2026                                                                                                |
+| **Лимит запросов**       | 30 RPS на `platform-api2.max.ru`                                                                           |
+| **Последнее обновление** | 14.08.2026 (верификация против доков 2026-08-14)                                                           |
 
 ## Содержимое
 
@@ -56,7 +58,7 @@ spec = yaml.safe_load(open('openapi.yaml'))
 schemas = set(spec['components']['schemas'].keys())
 responses = set(spec['components']['responses'].keys())
 refs = re.findall(r'\"#/components/(schemas|responses)/(\w+)\"', open('openapi.yaml').read())
-broken = [f'{t}/{n}' for t, n in refs if n not (schemas if t == 'schemas' else responses)]
+broken = [f'{t}/{n}' for t, n in refs if n not in (schemas if t == 'schemas' else responses)]
 print(f'{len(refs)} refs, {len(broken)} broken' if broken else f'Все {len(refs)} ссылок резолвятся')
 "
 ```

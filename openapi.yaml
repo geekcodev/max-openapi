@@ -15,6 +15,7 @@ info:
     - Добавьте сертификат Минцифры в список доверенных.
     - HTTP вебхуки больше не поддерживаются — используйте HTTPS.
     - Long Polling ограничен по скорости и сроку хранения событий — не подходит для production.
+    - Лимит запросов: 30 rps на `platform-api2.max.ru`.
   version: 1.0.0
   contact:
     name: MAX Developer Support
@@ -492,6 +493,11 @@ paths:
                   description: Список пользователей/ботов для назначения администраторами
                   items:
                     $ref: "#/components/schemas/ChatAdmin"
+                marker:
+                  type: integer
+                  format: int64
+                  nullable: true
+                  description: Указатель на следующую страницу данных (для большого количества администраторов)
       responses:
         "200":
           description: Администраторы назначены
@@ -1010,14 +1016,14 @@ paths:
         - name: from
           in: query
           required: false
-          description: Unix timestamp — сообщения с этого времени
+          description: Unix timestamp в миллисекундах — сообщения с этого времени
           schema:
             type: integer
             format: int64
         - name: to
           in: query
           required: false
-          description: Unix timestamp — сообщения до этого времени
+          description: Unix timestamp в миллисекундах — сообщения до этого времени
           schema:
             type: integer
             format: int64
@@ -1475,6 +1481,9 @@ components:
         - edit
         - delete
         - view_stats
+        - post_edit_delete_message
+        - edit_message
+        - delete_message
       description: |
         Права администратора чата/канала.
 
@@ -1490,6 +1499,11 @@ components:
         - `edit_link` — редактирование ссылки группового чата (недоступно для каналов)
         - `can_call` — звонки в групповом чате (недоступно для каналов)
         - `view_stats` — просмотр статистики канала (только владелец, недоступно для групповых чатов)
+
+        **Устаревшие значения** (могут возвращаться в ответе API; не используйте для выдачи прав):
+        - `post_edit_delete_message` — устарело, используйте `write`
+        - `edit_message` — устарело, используйте `edit`
+        - `delete_message` — устарело, используйте `delete`
 
     UpdateType:
       type: string
@@ -1594,7 +1608,7 @@ components:
         last_activity_time:
           type: integer
           format: int64
-          description: Время последней активности (Unix timestamp в миллисекундах)
+          description: Время последней активности (Unix timestamp в миллисекундах). Может не возвращаться, если пользователь скрыл онлайн-статус
         name:
           type: string
           nullable: true
@@ -1665,7 +1679,7 @@ components:
             join_time:
               type: integer
               format: int64
-              description: Дата вступления (Unix timestamp, в секундах)
+              description: Дата вступления (Unix timestamp, в миллисекундах)
             permissions:
               type: array
               nullable: true
@@ -1888,9 +1902,9 @@ components:
       description: |
         Тело нового сообщения для создания/редактирования.
 
-        **Форматирование текста:**
-        - `markdown` — поддерживает: **жирный**, _курсив_, [ссылки](url), `моноширинный`, ~зачёркнутый~, ||спойлер||, [упоминания](https://max.ru/username)
-        - `html` — поддерживает: `<b>жирный</b>`, `<i>курсив</i>`, `<a href="url">ссылки</a>`, `<code>моноширинный</code>`, `<s>зачёркнутый</s>`, `<mention user-id="12345">упоминания</mention>`, `<pre>preformatted</pre>`, `<pre><code class="language-python">код</code></pre>
+        **Форматирование текста** (полная таблица — см. `TextFormat`):
+        - `markdown` — `*emphasized*`/`_emphasized_`, `**strong**`/`__strong__`, `~~strikethrough~~`, `++underline++`, `` `code` ``, `[text](url)`, `[Имя Фамилия](max://user/user_id)`, `^^выделенный^^`, `# заголовок`, `> цитата`
+        - `html` — `<i>`/`<em>`, `<b>`/`<strong>`, `<del>`/`<s>`, `<ins>`/`<u>`, `<pre>`/`<code>`, `<a href="url">text</a>`, `<a href="max://user/user_id">Имя Фамилия</a>`, `<mark>text</mark>`, `<h1>`..`<h4>`, `<blockquote>`
 
         **Правила комбинирования вложений:**
         - Видео и изображения можно комбинировать друг с другом и одной кнопкой — максимум 12 вложений
@@ -1900,12 +1914,7 @@ components:
         **Загрузка медиафайлов:**
         - `POST /uploads` — для `image`, `video`, `audio`, `file`, `share` (возвращает токен)
         - `type=photo` deprecated — используйте `type=image`
-        - `video_size` deprecated — используйте `duration` в ответе `POST /uploads`
         - Для `image` также допустим прямой URL в поле `payload.url`
-
-        **Отправка видео/аудио:**
-        - Загрузите файл через `POST /uploads`
-        - В `POST /uploads` вызовите `send_push=true` для автоматической отправки всем подписчикам
       properties:
         text:
           type: string
@@ -2280,6 +2289,9 @@ components:
         | `message_removed` | `timestamp`, `message_id`, `chat_id`, `user_id` |
         | `user_added` | `timestamp`, `chat_id`, `user`, `inviter_id`, `is_channel` |
         | `user_removed` | `timestamp`, `chat_id`, `user`, `admin_id`, `is_channel` |
+
+        Примеры в блоке `examples` составлены по таблице полей выше. `bot_added` соответствует примеру из
+        официальной документации, остальные — иллюстративные.
       properties:
         update_type:
           $ref: "#/components/schemas/UpdateType"
@@ -2357,6 +2369,185 @@ components:
                 - $ref: "#/components/schemas/Message"
               nullable: true
               description: Изначальное сообщение с встроенной клавиатурой. Может быть null, если оно было удалено к моменту получения события
+      examples:
+        - summary: bot_added — бот добавлен в чат (пример из документации)
+          value:
+            update_type: bot_added
+            timestamp: 1755000000000
+            chat_id: 123456789
+            user:
+              user_id: 1000000001
+              first_name: Иван
+              last_name: Иванов
+              username: ivan
+              is_bot: false
+            is_channel: false
+        - summary: bot_started — пользователь начал/возобновил разговор с ботом
+          value:
+            update_type: bot_started
+            timestamp: 1755000001000
+            chat_id: 123456789
+            user:
+              user_id: 1000000001
+              first_name: Иван
+              username: ivan
+              is_bot: false
+            payload: /start promo_2026
+            user_locale: ru
+        - summary: bot_stopped — пользователь остановил/удалил бота
+          value:
+            update_type: bot_stopped
+            timestamp: 1755000002000
+            chat_id: 123456789
+            user:
+              user_id: 1000000001
+              first_name: Иван
+              username: ivan
+              is_bot: false
+            user_locale: ru
+        - summary: bot_removed — бот удалён из чата/канала
+          value:
+            update_type: bot_removed
+            timestamp: 1755000003000
+            chat_id: 987654321
+            user:
+              user_id: 1000000002
+              first_name: Пётр
+              is_bot: false
+            is_channel: false
+        - summary: chat_title_changed — изменено название чата/канала
+          value:
+            update_type: chat_title_changed
+            timestamp: 1755000004000
+            chat_id: 987654321
+            user:
+              user_id: 1000000002
+              first_name: Пётр
+              is_bot: false
+            title: Новая команда
+        - summary: dialog_cleared — пользователь очистил историю диалога
+          value:
+            update_type: dialog_cleared
+            timestamp: 1755000005000
+            chat_id: 123456789
+            user:
+              user_id: 1000000001
+              first_name: Иван
+              is_bot: false
+            user_locale: ru
+        - summary: dialog_muted — отключены уведомления диалога
+          value:
+            update_type: dialog_muted
+            timestamp: 1755000006000
+            chat_id: 123456789
+            user:
+              user_id: 1000000001
+              first_name: Иван
+              is_bot: false
+            muted_until: 1755086400000
+            user_locale: ru
+        - summary: dialog_unmuted — включены уведомления диалога
+          value:
+            update_type: dialog_unmuted
+            timestamp: 1755000007000
+            chat_id: 123456789
+            user:
+              user_id: 1000000001
+              first_name: Иван
+              is_bot: false
+            user_locale: ru
+        - summary: dialog_removed — диалог удалён
+          value:
+            update_type: dialog_removed
+            timestamp: 1755000008000
+            chat_id: 123456789
+            user:
+              user_id: 1000000001
+              first_name: Иван
+              is_bot: false
+            user_locale: ru
+        - summary: message_callback — пользователь нажал кнопку
+          value:
+            update_type: message_callback
+            timestamp: 1755000009000
+            callback:
+              callback_id: btn_order_1
+              payload: order:42
+              message:
+                sender:
+                  user_id: 1000000001
+                  first_name: Иван
+                  is_bot: false
+                recipient:
+                  chat_id: 123456789
+                  chat_type: dialog
+                timestamp: 1754999400000
+                body:
+                  mid: mid_20260814_001
+                  text: Заказ пиццы
+            user_locale: ru
+        - summary: message_created — новое сообщение или пост в канале
+          value:
+            update_type: message_created
+            timestamp: 1755000010000
+            message:
+              sender:
+                user_id: 1000000001
+                first_name: Иван
+                is_bot: false
+              recipient:
+                chat_id: 123456789
+                chat_type: dialog
+              timestamp: 1755000010000
+              body:
+                mid: mid_20260814_002
+                text: Привет!
+            user_locale: ru
+        - summary: message_edited — сообщение отредактировано
+          value:
+            update_type: message_edited
+            timestamp: 1755000011000
+            message:
+              sender:
+                user_id: 1000000001
+                first_name: Иван
+                is_bot: false
+              recipient:
+                chat_id: 123456789
+                chat_type: dialog
+              timestamp: 1755000010000
+              body:
+                mid: mid_20260814_002
+                text: Привет! (исправлено)
+        - summary: message_removed — сообщение удалено
+          value:
+            update_type: message_removed
+            timestamp: 1755000012000
+            message_id: mid_20260814_002
+            chat_id: 123456789
+            user_id: 1000000001
+        - summary: user_added — новый пользователь вступил в чат/канал
+          value:
+            update_type: user_added
+            timestamp: 1755000013000
+            chat_id: 987654321
+            user:
+              user_id: 1000000003
+              first_name: Мария
+              is_bot: false
+            inviter_id: 1000000002
+            is_channel: false
+        - summary: user_removed — пользователь удалён/покинул чат/канал
+          value:
+            update_type: user_removed
+            timestamp: 1755000014000
+            chat_id: 987654321
+            user:
+              user_id: 1000000003
+              first_name: Мария
+              is_bot: false
+            admin_id: 1000000002
+            is_channel: false
 
     SuccessResponse:
       type: object
