@@ -1010,14 +1010,14 @@ paths:
         - name: from
           in: query
           required: false
-          description: Unix timestamp — сообщения до этого времени
+          description: Unix timestamp — сообщения с этого времени
           schema:
             type: integer
             format: int64
         - name: to
           in: query
           required: false
-          description: Unix timestamp — сообщения с этого времени
+          description: Unix timestamp — сообщения до этого времени
           schema:
             type: integer
             format: int64
@@ -1518,6 +1518,7 @@ components:
         - video
         - audio
         - file
+        - contact
         - sticker
         - inline_keyboard
         - location
@@ -1529,6 +1530,7 @@ components:
         - `video` — видео (MP4, MOV, MKV, WEBM; до 250 МБ)
         - `audio` — аудио (MP3, WAV, M4A и др.; до 256 МБ или 60 мин)
         - `file` — файлы (TXT, DOC, PDF и др.; до 4 ГБ)
+        - `contact` — контакт пользователя (возвращается по кнопке `request_contact`; поле `hash` для верификации через `HMAC-SHA256(access_token, vcf_info)`)
         - `sticker` — стикеры
         - `inline_keyboard` — кнопки клавиатуры (до 210 кнопок в 30 рядах, до 7 в каждом; до 3 для link/open_app/request_geo_location/request_contact)
         - `location` — геолокация
@@ -1663,7 +1665,7 @@ components:
             join_time:
               type: integer
               format: int64
-              description: Дата вступления (Unix timestamp)
+              description: Дата вступления (Unix timestamp, в секундах)
             permissions:
               type: array
               nullable: true
@@ -1887,8 +1889,8 @@ components:
         Тело нового сообщения для создания/редактирования.
 
         **Форматирование текста:**
-        - `markdown` — поддерживает: **жирный**, _курсив_, [ссылки](url), `моноширинный`, ~зачёркнутый~, ||спойлер||, [mentions](tg://resolve?domain=...)
-        - `html` — поддерживает: `<b>жирный</b>`, `<i>курсив</i>`, `<a href="url">ссылки</a>`, `<code>моноширинный</code>`, `<s>зачёркнутый</s>`, `<tg-spoiler>спойлер</tg-spoiler>`, `<mention user-id="12345">mentions</mention>`, `<pre>preformatted</pre>`, `<pre><code class="language-python">код</code></pre>
+        - `markdown` — поддерживает: **жирный**, _курсив_, [ссылки](url), `моноширинный`, ~зачёркнутый~, ||спойлер||, [упоминания](https://max.ru/username)
+        - `html` — поддерживает: `<b>жирный</b>`, `<i>курсив</i>`, `<a href="url">ссылки</a>`, `<code>моноширинный</code>`, `<s>зачёркнутый</s>`, `<mention user-id="12345">упоминания</mention>`, `<pre>preformatted</pre>`, `<pre><code class="language-python">код</code></pre>
 
         **Правила комбинирования вложений:**
         - Видео и изображения можно комбинировать друг с другом и одной кнопкой — максимум 12 вложений
@@ -1965,8 +1967,6 @@ components:
             - $ref: "#/components/schemas/ContactAttachmentPayload"
             - $ref: "#/components/schemas/LocationAttachmentPayload"
             - $ref: "#/components/schemas/InlineKeyboardAttachmentPayload"
-          discriminator:
-            propertyName: token
       required: [ type ]
 
     ImageAttachmentPayload:
@@ -2064,21 +2064,17 @@ components:
       type: object
       description: Inline-клавиатура
       properties:
-        rows:
+        buttons:
           type: array
           description: Ряды кнопок (каждый элемент — массив кнопок; например `[[btn1, btn2], [btn3]]`)
           items:
             $ref: "#/components/schemas/InlineKeyboardButtonRow"
 
     InlineKeyboardButtonRow:
-      type: object
-      description: Ряд кнопок inline-клавиатуры
-      properties:
-        buttons:
-          type: array
-          description: Кнопки в ряду (макс. 7)
-          items:
-            $ref: "#/components/schemas/InlineKeyboardButton"
+      type: array
+      description: Ряд кнопок inline-клавиатуры (макс. 7)
+      items:
+        $ref: "#/components/schemas/InlineKeyboardButton"
 
     InlineKeyboardButton:
       type: object
@@ -2140,7 +2136,7 @@ components:
               type: string
               nullable: true
               description: URL медиафайла
-            rows:
+            buttons:
               type: array
               nullable: true
               description: Ряды inline-клавиатуры
@@ -2373,8 +2369,8 @@ components:
       description: Ответ об ошибке
       properties:
         code:
-          type: integer
-          description: HTTP-код ошибки
+          type: string
+          description: Код ошибки
         message:
           type: string
           description: Описание ошибки

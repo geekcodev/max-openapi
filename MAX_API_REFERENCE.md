@@ -645,7 +645,7 @@ webhook-событий и вести собственное хранилище.
 1. **Resumable-загрузка** (не multipart/form-data) — можно возобновить при сбое
 2. **Multipart-загрузка** (`Content-Type: multipart/form-data`) — проще, но при сбое нужно начинать заново
 
-**Лимит запросов:** 30 RPS на platform-api.max.ru
+**Лимит запросов:** 30 RPS на platform-api2.max.ru
 
 **Query-параметры:**
 
@@ -1437,29 +1437,25 @@ MAX пользователя. Это делает контакт пригодн�
 {
   "type": "inline_keyboard",
   "payload": {
-    "rows": [
-      {
-        "buttons": [
-          {
-            "type": "callback",
-            "text": "Button 1",
-            "payload": "data1"
-          },
-          {
-            "type": "link",
-            "text": "Open link",
-            "url": "https://example.com"
-          }
-        ]
-      },
-      {
-        "buttons": [
-          {
-            "type": "request_contact",
-            "text": "Share contact"
-          }
-        ]
-      }
+    "buttons": [
+      [
+        {
+          "type": "callback",
+          "text": "Button 1",
+          "payload": "data1"
+        },
+        {
+          "type": "link",
+          "text": "Open link",
+          "url": "https://example.com"
+        }
+      ],
+      [
+        {
+          "type": "request_contact",
+          "text": "Share contact"
+        }
+      ]
     ]
   }
 }
