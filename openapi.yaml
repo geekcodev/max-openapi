@@ -2111,10 +2111,16 @@ components:
             Интент для `request_geo_location`:
             - `sendOnce` — однократная отправка
             - `sendLive` — отправка текущего местоположения в реальном времени
-        app_data:
+        web_app:
           type: string
           nullable: true
-          description: Данные для открытия мини-приложения (для типа `open_app`)
+          description: |
+            Публичное имя (username) бота или ссылка на него, чьё мини-приложение нужно открыть
+            (для типа `open_app`). URL мини-приложения задаётся на платформе MAX, а не в кнопке.
+        contact_id:
+          type: integer
+          nullable: true
+          description: Идентификатор бота, чьё мини-приложение нужно открыть (альтернатива `web_app` для типа `open_app`)
       required: [ type, text ]
 
     AttachmentRequest:
