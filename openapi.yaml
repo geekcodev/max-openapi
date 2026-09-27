@@ -44,6 +44,8 @@ tags:
     description: Отправка, получение, редактирование и удаление сообщений
   - name: Answers
     description: Ответ на callback-кнопки
+  - name: Comments
+    description: Комментарии к постам в каналах (добавлены в августе 2026)
 
 paths:
   /me:
@@ -84,8 +86,7 @@ paths:
               type: object
               properties:
                 commands:
-                  type: array
-                  nullable: true
+                  type: [array, "null"]
                   description: Массив команд бота (максимум 32)
                   items:
                     $ref: "#/components/schemas/BotCommand"
@@ -98,43 +99,11 @@ paths:
                 type: object
                 properties:
                   commands:
-                    type: array
-                    nullable: true
+                    type: [array, "null"]
                     items:
                       $ref: "#/components/schemas/BotCommand"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/MethodNotAllowed"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-
-  /chats:
-    get:
-      operationId: getChats
-      summary: Получение списка всех групповых чатов и каналов
-      description: |
-        ⚠️ **DEPRECATED с июня 2026** — метод больше не поддерживается.
-        Вместо него используйте `POST /subscriptions` для подписки на события `bot_added` / `bot_started`
-        и храните chat_id самостоятельно.
-      tags: [ Chats ]
-      deprecated: true
-      responses:
-        "200":
-          description: Успешный запрос (deprecated)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  chats:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Chat"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "405":
@@ -186,14 +155,18 @@ paths:
               type: object
               properties:
                 title:
-                  type: string
-                  nullable: true
+                  type: [string, "null"]
                   description: Название чата (1–200 символов)
                   minLength: 1
                   maxLength: 200
+                description:
+                  type: [string, "null"]
+                  description: |
+                    Описание чата или канала, до 16000 символов. Пустая строка снимает описание.
+                    Поле добавлено в августе 2026 (`https://dev.max.ru/docs-api/changelog-api`, раздел Chats)
+                  maxLength: 16000
                 icon:
-                  type: object
-                  nullable: true
+                  type: [object, "null"]
                   description: Изображение иконки чата
                   properties:
                     url:
@@ -203,12 +176,10 @@ paths:
                       type: string
                       description: Payload изображения
                 pin:
-                  type: string
-                  nullable: true
+                  type: [string, "null"]
                   description: ID сообщения для закрепления (для открепления используйте DELETE pin)
                 notify:
-                  type: boolean
-                  nullable: true
+                  type: [boolean, "null"]
                   default: true
                   description: Отправлять ли системное уведомление об изменении
       responses:
@@ -288,8 +259,9 @@ paths:
                 type: object
                 properties:
                   message:
-                    $ref: "#/components/schemas/Message"
-                    nullable: true
+                    anyOf:
+                      - $ref: "#/components/schemas/Message"
+                      - type: "null"
                     description: Закреплённое сообщение (null, если нет)
         "400":
           $ref: "#/components/responses/BadRequest"
@@ -324,8 +296,7 @@ paths:
                   type: string
                   description: 'ID сообщения для закрепления (совпадает с `Message.body.mid`)'
                 notify:
-                  type: boolean
-                  nullable: true
+                  type: [boolean, "null"]
                   default: true
                   description: Уведомлять участников о закреплении
       responses:
@@ -452,9 +423,8 @@ paths:
                     items:
                       $ref: "#/components/schemas/ChatMember"
                   marker:
-                    type: integer
+                    type: [integer, "null"]
                     format: int64
-                    nullable: true
                     description: Маркер для следующей страницы
         "400":
           $ref: "#/components/responses/BadRequest"
@@ -494,9 +464,8 @@ paths:
                   items:
                     $ref: "#/components/schemas/ChatAdmin"
                 marker:
-                  type: integer
+                  type: [integer, "null"]
                   format: int64
-                  nullable: true
                   description: Указатель на следующую страницу данных (для большого количества администраторов)
       responses:
         "200":
@@ -569,8 +538,7 @@ paths:
           description: |
             Конкретные ID пользователей для проверки (игнорирует `count` и `marker`).
           schema:
-            type: array
-            nullable: true
+            type: [array, "null"]
             items:
               type: integer
               format: int64
@@ -603,71 +571,9 @@ paths:
                     items:
                       $ref: "#/components/schemas/ChatMember"
                   marker:
-                    type: integer
+                    type: [integer, "null"]
                     format: int64
-                    nullable: true
                     description: Маркер для следующей страницы
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/MethodNotAllowed"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-
-    post:
-      operationId: addChatMembers
-      summary: Добавление участников в групповой чат
-      description: |
-        Добавляет участников в групповой чат. Бот должен быть администратором с правом `add_remove_members`.
-        Нельзя добавлять подписчиков в каналы.
-      tags: [ Chats ]
-      parameters:
-        - $ref: "#/components/parameters/chatId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - user_ids
-              properties:
-                user_ids:
-                  type: array
-                  description: Массив ID пользователей (максимум 100)
-                  items:
-                    type: integer
-                    format: int64
-                  maxItems: 100
-      responses:
-        "200":
-          description: Участники добавлены
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      failed_user_ids:
-                        type: array
-                        nullable: true
-                        description: ID пользователей, которых не удалось добавить
-                        items:
-                          type: integer
-                          format: int64
-                      failed_user_details:
-                        type: array
-                        nullable: true
-                        description: Подробные причины ошибок
-                        items:
-                          $ref: "#/components/schemas/FailedUserDetails"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -787,16 +693,14 @@ paths:
                   description: 'HTTPS URL эндпоинта (должен начинаться с `https://`)'
                   pattern: "^https://"
                 update_types:
-                  type: array
-                  nullable: true
+                  type: [array, "null"]
                   description: |
                     Типы обновлений для подписки (например, `["message_created", "bot_started"]`).
                     См. объект Update для полного списка.
                   items:
                     type: string
                 secret:
-                  type: string
-                  nullable: true
+                  type: [string, "null"]
                   description: |
                     Секретный ключ (5–256 символов, `[a-zA-Z0-9_-]`).
                     Передаётся в заголовке `X-Max-Bot-Api-Secret`.
@@ -890,9 +794,8 @@ paths:
             Маркер для пагинации. Передайте `null` или опустите для получения только последних событий.
             Передайте маркер из предыдущего ответа для получения всех событий с момента последнего чтения.
           schema:
-            type: integer
+            type: [integer, "null"]
             format: int64
-            nullable: true
         - name: types
           in: query
           required: false
@@ -900,8 +803,7 @@ paths:
             Типы обновлений (например, `types=message_created,message_callback`).
             См. объект Update для полного списка.
           schema:
-            type: array
-            nullable: true
+            type: [array, "null"]
             items:
               type: string
       responses:
@@ -917,9 +819,8 @@ paths:
                     items:
                       $ref: "#/components/schemas/Update"
                   marker:
-                    type: integer
+                    type: [integer, "null"]
                     format: int64
-                    nullable: true
                     description: Маркер для следующего запроса
         "401":
           $ref: "#/components/responses/Unauthorized"
@@ -969,16 +870,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  url:
-                    type: string
-                    format: uri
-                    description: URL для загрузки (без срока действия)
-                  token:
-                    type: string
-                    nullable: true
-                    description: 'Токен для `attachments.payload.token` в POST/PUT /messages'
+                $ref: "#/components/schemas/UploadedInfo"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1024,6 +916,24 @@ paths:
           in: query
           required: false
           description: Unix timestamp в миллисекундах — сообщения до этого времени
+          schema:
+            type: integer
+            format: int64
+        - name: after
+          in: query
+          required: false
+          description: |
+            Сообщения после указанного timestamp (Unix, миллисекунды).
+            Предпочтительнее `from` — сервер отдаёт страницу последних сообщений.
+          schema:
+            type: integer
+            format: int64
+        - name: before
+          in: query
+          required: false
+          description: |
+            Сообщения перед указанным timestamp (Unix, миллисекунды).
+            Предпочтительнее `to` — страница более ранних сообщений.
           schema:
             type: integer
             format: int64
@@ -1095,7 +1005,14 @@ paths:
         - name: disable_link_preview
           in: query
           required: false
-          description: 'Если `true`, отключает генерацию предпросмотра ссылок'
+          description: |
+            Управление превью ссылок в тексте.
+
+            `true` — сервер не будет генерировать медиапревью для ссылок в тексте.
+
+            **Баг официальной доки:** в `schema.yaml` написано обратное — «If `false`, server will not generate
+            media preview for links in text» (проверено 2026-09-27), что противоречит `default: false` и смыслу имени
+            параметра.
           schema:
             type: boolean
             default: false
@@ -1303,6 +1220,17 @@ paths:
           schema:
             type: string
             pattern: "^(?!\\s*$).+"
+        - name: disable_link_preview
+          in: query
+          required: false
+          description: |
+            Управление превью ссылок в тексте.
+
+            `true` — сервер не будет генерировать медиапревью для ссылок в обновлённом тексте сообщения.
+            Добавлено в августе 2026 (`https://dev.max.ru/docs-api/changelog-api`, раздел Messages).
+          schema:
+            type: boolean
+            default: false
       requestBody:
         required: true
         content:
@@ -1311,8 +1239,9 @@ paths:
               type: object
               properties:
                 message:
-                  $ref: "#/components/schemas/NewMessageBody"
-                  nullable: true
+                  anyOf:
+                    - $ref: "#/components/schemas/NewMessageBody"
+                    - type: "null"
                   description: Заполните для обновления текущего сообщения
       responses:
         "200":
@@ -1321,6 +1250,221 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /messages/{messageId}/comments:
+    get:
+      operationId: getComments
+      summary: Получение комментариев к посту
+      description: |
+        Возвращает комментарии к посту в канале. Комментарии доступны только для постов в каналах.
+      tags: [ Comments ]
+      parameters:
+        - $ref: "#/components/parameters/messageId"
+        - name: comment_ids
+          in: query
+          required: false
+          description: Список ID комментариев через запятую
+          schema:
+            type: string
+        - name: after
+          in: query
+          required: false
+          description: Комментарии после указанного timestamp (Unix, миллисекунды)
+          schema:
+            type: integer
+            format: int64
+        - name: before
+          in: query
+          required: false
+          description: Комментарии перед указанным timestamp (Unix, миллисекунды)
+          schema:
+            type: integer
+            format: int64
+        - name: count
+          in: query
+          required: false
+          description: Максимальное количество комментариев в ответе (по умолчанию 50)
+          schema:
+            type: integer
+            format: int32
+            default: 50
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentMessageList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    post:
+      operationId: sendComment
+      summary: Отправка комментария
+      description: |
+        Отправляет комментарий к посту в канале. Вложения **не поддерживаются** — используйте `NewCommentBody`.
+      tags: [ Comments ]
+      parameters:
+        - $ref: "#/components/parameters/messageId"
+        - name: disable_link_preview
+          in: query
+          required: false
+          description: |
+            Управление превью ссылок в тексте комментария.
+
+            `true` — сервер не будет генерировать медиапревью для ссылок в тексте.
+
+            **Баг официальной доки:** в `schema.yaml` для этого параметра написано обратное — «If `false`, server will
+            not generate media preview for links in text» (проверено 2026-09-27), что противоречит и `default: false`,
+            и смыслу имени параметра. Спека придерживается `true` = превью выключено, как в `POST /messages`
+            и `POST /answers`.
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewCommentBody"
+      responses:
+        "200":
+          description: Комментарий отправлен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SendCommentResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    put:
+      operationId: editComment
+      summary: Редактирование комментария
+      description: Редактирует ранее отправленный комментарий. Вложения не поддерживаются.
+      tags: [ Comments ]
+      parameters:
+        - $ref: "#/components/parameters/messageId"
+        - name: comment_id
+          in: query
+          required: true
+          description: Идентификатор редактируемого комментария
+          schema:
+            type: string
+            minLength: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewCommentBody"
+      responses:
+        "200":
+          description: Комментарий отредактирован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+    delete:
+      operationId: deleteComment
+      summary: Удаление комментария
+      description: Удаляет ранее отправленный комментарий.
+      tags: [ Comments ]
+      parameters:
+        - $ref: "#/components/parameters/messageId"
+        - name: comment_id
+          in: query
+          required: true
+          description: Идентификатор удаляемого комментария
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: Комментарий удалён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /messages/{messageId}/comments/{commentId}:
+    get:
+      operationId: getComment
+      summary: Получение комментария по его ID
+      description: Возвращает один комментарий поста в канале по его идентификатору.
+      tags: [ Comments ]
+      parameters:
+        - $ref: "#/components/parameters/messageId"
+        - name: commentId
+          in: path
+          required: true
+          description: Идентификатор комментария (`mid`)
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentMessage"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1354,6 +1498,14 @@ components:
         type: integer
         format: int64
         pattern: "-?\\d+"
+    messageId:
+      name: messageId
+      in: path
+      required: true
+      description: Идентификатор сообщения (`mid`)
+      schema:
+        type: string
+        minLength: 1
 
   responses:
     BadRequest:
@@ -1467,6 +1619,142 @@ components:
         | заголовок | `<h1>`..`<h4>` (все уровни одинаковые) |
         | цитата | `<blockquote>text</blockquote>` |
 
+    # ─── Разметка текста (ответ API) ───────────────────────────
+    MarkupElement:
+      type: object
+      description: |
+        Базовый тип элемента разметки текста.
+
+        API возвращает текст сообщения в поле `MessageBody.markup` уже разобранным: `text` содержит
+        «чистый» текст, а `markup` — список элементов с их позициями в тексте. Набор типов и их
+        `type`-значения подтверждены официальной машинной спецификацией
+        `https://github.com/max-messenger/api-schema` → `schema.yaml`, схема `MarkupElement`
+        (проверено 2026-09-27). Соответствие синтаксису `markdown`/`html` — см. `TextFormat`
+        и `https://dev.max.ru/docs-api/use-cases/sending-messages/text-formatting`.
+      properties:
+        type:
+          type: string
+          description: |
+            Тип элемента разметки. Соответствие синтаксису:
+
+            - `strong` — `**жирный**` / `<b>`
+            - `emphasized` — `*курсив*` / `<i>`
+            - `underline` — `++подчёркнутый++` / `<u>`
+            - `strikethrough` — `~~зачёркнутый~~` / `<s>`
+            - `monospaced` — `` `моноширинный` `` / `<code>`
+            - `highlighted` — `^^выделенный^^` / `<mark>`
+            - `link` — `[текст](url)` / `<a href="url">`
+            - `quote` — `> цитата` / `<blockquote>`
+            - `heading` — `# заголовок` / `<h1>`..`<h4>`
+            - `user_mention` — `[Имя](max://user/user_id)` / `<a href="max://user/user_id">`
+          enum:
+            - strong
+            - emphasized
+            - underline
+            - strikethrough
+            - monospaced
+            - highlighted
+            - link
+            - quote
+            - heading
+            - user_mention
+        from:
+          type: integer
+          format: int32
+          description: Индекс начала элемента в тексте (с нуля)
+        length:
+          type: integer
+          format: int32
+          description: Длина элемента разметки в символах
+      discriminator:
+        propertyName: type
+        mapping:
+          strong: "#/components/schemas/StrongMarkup"
+          emphasized: "#/components/schemas/EmphasizedMarkup"
+          underlined: "#/components/schemas/UnderlineMarkup"
+          strikethrough: "#/components/schemas/StrikethroughMarkup"
+          monospaced: "#/components/schemas/MonospacedMarkup"
+          highlighted: "#/components/schemas/HighlightedMarkup"
+          quote: "#/components/schemas/QuoteMarkup"
+          heading: "#/components/schemas/HeadingMarkup"
+          link: "#/components/schemas/LinkMarkup"
+          user_mention: "#/components/schemas/UserMentionMarkup"
+      required:
+        - type
+        - from
+        - length
+
+    StrongMarkup:
+      allOf:
+        - $ref: "#/components/schemas/MarkupElement"
+      description: Жирный текст (`**text**` / `<b>text</b>`)
+
+    EmphasizedMarkup:
+      allOf:
+        - $ref: "#/components/schemas/MarkupElement"
+      description: Курсив (`*text*` / `<i>text</i>`)
+
+    UnderlineMarkup:
+      allOf:
+        - $ref: "#/components/schemas/MarkupElement"
+      description: Подчёркнутый текст (`++text++` / `<u>text</u>`)
+
+    StrikethroughMarkup:
+      allOf:
+        - $ref: "#/components/schemas/MarkupElement"
+      description: Зачёркнутый текст (`~~text~~` / `<s>text</s>`)
+
+    MonospacedMarkup:
+      allOf:
+        - $ref: "#/components/schemas/MarkupElement"
+      description: "Моноширинный текст (`` `text` `` / `<code>text</code>`)"
+
+    HighlightedMarkup:
+      allOf:
+        - $ref: "#/components/schemas/MarkupElement"
+      description: Выделенный текст (`^^text^^` / `<mark>text</mark>`)
+
+    QuoteMarkup:
+      allOf:
+        - $ref: "#/components/schemas/MarkupElement"
+      description: Цитата (`> text` / `<blockquote>text</blockquote>`)
+
+    HeadingMarkup:
+      allOf:
+        - $ref: "#/components/schemas/MarkupElement"
+      description: Заголовок (`# text` / `<h1>`..`<h4>`)
+
+    LinkMarkup:
+      allOf:
+        - $ref: "#/components/schemas/MarkupElement"
+        - type: object
+          properties:
+            url:
+              type: string
+              minLength: 1
+              maxLength: 2048
+              description: URL ссылки
+          required:
+            - url
+      description: Ссылка в тексте (`[text](url)` / `<a href="url">text</a>`)
+
+    UserMentionMarkup:
+      allOf:
+        - $ref: "#/components/schemas/MarkupElement"
+        - type: object
+          properties:
+            user_id:
+              type: [integer, "null"]
+              format: int64
+              description: Идентификатор упомянутого пользователя (если у него нет `username`)
+            user_link:
+              type: [string, "null"]
+              description: "`@username` упомянутого пользователя"
+      description: |
+        Упоминание пользователя в тексте (`[Имя](max://user/user_id)` /
+        `<a href="max://user/user_id">Имя</a>`). Упоминание возможно как по `username`, так и по ID,
+        если у пользователя нет `username`.
+
     ChatAdminPermission:
       type: string
       enum:
@@ -1523,7 +1811,21 @@ components:
         - message_removed
         - user_added
         - user_removed
-      description: Тип обновления (события)
+        - comment_created
+        - comment_edited
+        - comment_removed
+        - bot_admin_permissions_changed
+      description: |
+        Тип обновления (события).
+
+        События `comment_created`, `comment_edited`, `comment_removed` добавлены вместе с группой методов
+        комментариев в августе 2026 (`https://dev.max.ru/docs-api/changelog-api`, раздел Comments). Бот
+        получает их, только если он администратор канала с правом `read_all_messages`.
+
+        Событие `bot_admin_permissions_changed` (изменение прав администратора бота) **не расписано на
+        страницах текстовой документации** — оно добавлено по официальной машинной схеме
+        `https://github.com/max-messenger/api-schema` -> `schema.yaml`, схема
+        `BotAdminPermissionsChangedUpdate` (проверено 2026-09-27).
 
     AttachmentType:
       type: string
@@ -1585,7 +1887,12 @@ components:
     # ─── Base Objects ─────────────────────────────────────────
     User:
       type: object
-      description: Базовый объект пользователя/бота
+      description: |
+        Базовый объект пользователя/бота.
+
+        Обязательны `user_id`, `first_name`, `is_bot` — официальная `schema.yaml`, схема `User`
+        (проверено 2026-09-27). `last_activity_time` может отсутствовать, если пользователь скрыл онлайн-статус
+        (это оговорено на странице `https://dev.max.ru/docs-api/objects/User`).
       properties:
         user_id:
           type: integer
@@ -1595,12 +1902,10 @@ components:
           type: string
           description: Отображаемое имя
         last_name:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Фамилия (не возвращается для ботов)
         username:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Имя пользователя
         is_bot:
           type: boolean
@@ -1610,9 +1915,17 @@ components:
           format: int64
           description: Время последней активности (Unix timestamp в миллисекундах). Может не возвращаться, если пользователь скрыл онлайн-статус
         name:
-          type: string
-          nullable: true
-          description: "**Deprecated**"
+          type: [string, "null"]
+          description: |
+            Устаревшее поле, скоро будет удалено.
+
+            Поле задокументировано на странице `https://dev.max.ru/docs-api/objects/User` (проверено 2026-09-27),
+            но **отсутствует** в официальной `schema.yaml` (схема `User`) — расхождение доки зафиксировано
+            в `AGENTS.md` § 5.
+      required:
+        - user_id
+        - first_name
+        - is_bot
 
     UserWithPhoto:
       allOf:
@@ -1621,16 +1934,13 @@ components:
           description: Пользователь с аватаром и описанием
           properties:
             description:
-              type: string
-              nullable: true
+              type: [string, "null"]
               description: Описание (макс. 16000 символов; null, если не задано)
             avatar_url:
-              type: string
-              nullable: true
+              type: [string, "null"]
               description: URL миниатюры аватара
             full_avatar_url:
-              type: string
-              nullable: true
+              type: [string, "null"]
               description: URL полноразмерного аватара
 
     BotInfo:
@@ -1640,25 +1950,32 @@ components:
           description: Информация о боте (включая команды). Возвращается только методом GET /me.
           properties:
             commands:
-              type: array
-              nullable: true
+              type: [array, "null"]
               description: Команды бота (макс. 32)
               items:
                 $ref: "#/components/schemas/BotCommand"
 
     BotCommand:
       type: object
-      description: Команда бота
+      description: |
+        Команда бота.
+
+        В официальной `schema.yaml` (схема `BotCommand`, проверено 2026-09-27) обязательно только `name`
+        (`1..64` символов), а `description` опционален (`1..128` символов, nullable) — раньше спека ошибочно
+        требовала оба поля.
       required:
         - name
-        - description
       properties:
         name:
           type: string
+          minLength: 1
+          maxLength: 64
           description: 'Имя команды (без `/`)'
         description:
-          type: string
-          description: Описание команды
+          type: [string, "null"]
+          minLength: 1
+          maxLength: 128
+          description: Описание команды (опционально)
 
     ChatMember:
       allOf:
@@ -1681,15 +1998,18 @@ components:
               format: int64
               description: Дата вступления (Unix timestamp, в миллисекундах)
             permissions:
-              type: array
-              nullable: true
+              type: [array, "null"]
               description: Права администратора (только для администраторов)
               items:
                 $ref: "#/components/schemas/ChatAdminPermission"
             alias:
-              type: string
-              nullable: true
+              type: [string, "null"]
               description: Алиас роли, отображаемый в настройках чата
+          required:
+            - last_access_time
+            - is_owner
+            - is_admin
+            - join_time
 
     ChatAdmin:
       type: object
@@ -1708,22 +2028,32 @@ components:
           items:
             $ref: "#/components/schemas/ChatAdminPermission"
         alias:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Алиас роли
 
     Image:
       type: object
-      description: Изображение
+      description: |
+        Изображение.
+
+        Состав полей и обязательность подтверждены официальной машинной спецификацией
+        `https://github.com/max-messenger/api-schema` → `schema.yaml`, схема `Image` (проверено 2026-09-27).
       properties:
         url:
           type: string
           format: uri
           description: URL изображения
+      required:
+        - url
 
     Chat:
       type: object
-      description: Информация о групповом чате или канале
+      description: |
+        Информация о групповом чате или канале.
+
+        Обязательны `chat_id`, `type`, `status`, `last_event_time`, `participants_count`, `is_public` —
+        официальная `schema.yaml`, схема `Chat` (проверено 2026-09-27). Остальные поля приходят в подмножестве
+        (например, `title` и `icon` — null для диалогов).
       properties:
         chat_id:
           type: integer
@@ -1734,13 +2064,12 @@ components:
         status:
           $ref: "#/components/schemas/ChatStatus"
         title:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Название чата/канала (null для диалогов)
         icon:
-          allOf:
+          anyOf:
             - $ref: "#/components/schemas/Image"
-          nullable: true
+            - type: "null"
           description: Иконка чата
         last_event_time:
           type: integer
@@ -1751,125 +2080,166 @@ components:
           format: int32
           description: Количество участников (всегда 2 для диалогов)
         owner_id:
-          type: integer
+          type: [integer, "null"]
           format: int64
-          nullable: true
           description: ID владельца
         participants:
-          type: object
-          nullable: true
+          type: [object, "null"]
           description: Участники с временем активности (null при списке чатов)
         is_public:
           type: boolean
           description: Публичность (всегда false для диалогов)
         link:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Ссылка на чат
         description:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Описание чата/канала
         dialog_with_user:
-          allOf:
+          anyOf:
             - $ref: "#/components/schemas/UserWithPhoto"
-          nullable: true
+            - type: "null"
           description: Собеседник в диалоге (только для типа dialog)
         messages_count:
-          type: integer
-          nullable: true
+          type: [integer, "null"]
           description: Количество сообщений
         pinned_message:
-          allOf:
+          anyOf:
             - $ref: "#/components/schemas/Message"
-          nullable: true
+            - type: "null"
           description: Закреплённое сообщение (только при запросе конкретного чата)
+      required:
+        - chat_id
+        - type
+        - status
+        - last_event_time
+        - participants_count
+        - is_public
 
     Recipient:
       type: object
-      description: Получатель сообщения (пользователь или чат)
+      description: |
+        Получатель сообщения (пользователь, чат или канал).
+
+        Набор значений `chat_type` подтверждён официальной машинной спецификацией
+        `https://github.com/max-messenger/api-schema` → `schema.yaml`, схема `ChatType` (проверено 2026-09-27):
+        `dialog`, `chat`, `channel`. Поле обязательно, `chat_id`/`user_id`/`post_id` — в зависимости от типа.
       properties:
         chat_id:
-          type: integer
+          type: [integer, "null"]
           format: int64
-          nullable: true
-          description: ID чата (если сообщение отправлено в чат)
+          description: ID чата или канала (если сообщение отправлено в чат/канал)
         chat_type:
-          type: string
-          nullable: true
-          description: Тип чата (например, "dialog"); набор значений уточнить по API
+          $ref: "#/components/schemas/ChatType"
         user_id:
-          type: integer
+          type: [integer, "null"]
           format: int64
-          nullable: true
           description: ID пользователя (если сообщение отправлено в диалог)
+        post_id:
+          type: [string, "null"]
+          description: ID поста (идентификатор комментируемого сообщения в канале)
+      required:
+        - chat_type
 
     MessageBody:
       type: object
-      description: Содержимое сообщения (текст и вложения). Может быть null, если только пересланное сообщение.
+      description: |
+        Содержимое сообщения (текст, разметка и вложения). Может быть null, если только пересланное сообщение.
+
+        Состав полей подтверждён 2026-09-27: в официальной `schema.yaml` (`MessageBody`) только
+        `mid`, `seq`, `text`, `markup`, `attachments`, а страница объекта `Message` описывает `body`
+        как «Содержимое сообщения. Текст + вложения». Поля `caption` и `format` удалены: `format`
+        документирован только как параметр **запроса** (`NewMessageBody`, `NewCommentBody`), а `caption`
+        не встречается ни в одной из 133 официальных схем.
       properties:
         mid:
           type: string
-          description: ID сообщения
+          description: Уникальный идентификатор сообщения (`mid`)
         seq:
           type: integer
           format: int64
-          description: Порядковый номер
+          description: Порядковый номер (sequence) сообщения в чате
         text:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Текст сообщения (макс. 4000 символов)
+        markup:
+          type: [array, "null"]
+          description: |
+            Разметка текста, разобранная API (в ответе). Синтаксис исходного форматирования —
+            `markdown` или `html`, см. `TextFormat` и раздел
+            `https://dev.max.ru/docs-api/use-cases/sending-messages/text-formatting`
+          items:
+            $ref: "#/components/schemas/MarkupElement"
         attachments:
-          type: array
-          nullable: true
+          type: [array, "null"]
           description: Вложения сообщения
           items:
             $ref: "#/components/schemas/Attachment"
-        caption:
-          type: string
-          nullable: true
-          description: Подпись к вложению
-        format:
-          $ref: "#/components/schemas/TextFormat"
+      required:
+        - mid
+        - seq
 
     LinkedMessage:
       type: object
-      description: Пересланное или ответное сообщение
+      description: |
+        Пересланное или ответное сообщение.
+
+        Состав полей подтверждён официальной машинной спецификацией
+        `https://github.com/max-messenger/api-schema` → `schema.yaml`, схема `LinkedMessage` (проверено 2026-09-27):
+        `sender` — **объект `User`**, а не числовой ID; идентификаторы сообщения и чата перенесены
+        в `message` (`MessageBody`) и `chat_id`.
       properties:
         type:
           type: string
           enum:
-            - forwarded
+            - forward
             - reply
           description: Тип связанного сообщения
+        message:
+          allOf:
+            - $ref: "#/components/schemas/MessageBody"
+          description: Содержимое связанного (пересланного или отвеченного) сообщения
         sender:
-          type: integer
+          anyOf:
+            - $ref: "#/components/schemas/User"
+            - type: "null"
+          description: |
+            Отправитель связанного сообщения. Может быть `null`, если сообщение опубликовано
+            от имени канала
+        chat_id:
+          type: [integer, "null"]
           format: int64
-          description: ID отправителя
-        mid:
-          type: string
-          description: ID связанного сообщения
-        chat:
-          type: string
-          nullable: true
-          description: ID чата, из которого переслано сообщение
+          description: ID чата, в котором сообщение было отправлено изначально
+      required:
+        - type
+        - message
 
     MessageStat:
       type: object
-      description: Статистика сообщения (только для постов в каналах)
+      description: |
+        Статистика сообщения (только для постов в каналах).
+
+        `views` обязателен — официальная `schema.yaml`, схема `MessageStat` (проверено 2026-09-27).
       properties:
         views:
           type: integer
           description: Количество просмотров
+      required:
+        - views
 
     Message:
       type: object
-      description: Сообщение в чате
+      description: |
+        Сообщение в чате.
+
+        Обязательны `recipient`, `body`, `timestamp` — официальная `schema.yaml`, схема `Message`
+        (проверено 2026-09-27). `sender` необязателен: объект отсутствует, если сообщение отправлено в канал
+        от имени канала.
       properties:
         sender:
-          allOf:
+          anyOf:
             - $ref: "#/components/schemas/User"
-          nullable: true
+            - type: "null"
           description: Пользователь, отправивший сообщение
         recipient:
           $ref: "#/components/schemas/Recipient"
@@ -1878,24 +2248,27 @@ components:
           format: int64
           description: Время создания (Unix timestamp в мс)
         link:
-          allOf:
+          anyOf:
             - $ref: "#/components/schemas/LinkedMessage"
-          nullable: true
+            - type: "null"
           description: Связанное сообщение (пересылка или ответ)
         body:
-          allOf:
+          anyOf:
             - $ref: "#/components/schemas/MessageBody"
-          nullable: true
+            - type: "null"
           description: Содержимое сообщения (может быть null для пересылок)
         stat:
-          allOf:
+          anyOf:
             - $ref: "#/components/schemas/MessageStat"
-          nullable: true
+            - type: "null"
           description: Статистика (только для постов в каналах)
         url:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Публичный URL поста в канале (не для диалогов/групп)
+      required:
+        - recipient
+        - body
+        - timestamp
 
     NewMessageBody:
       type: object
@@ -1917,21 +2290,19 @@ components:
         - Для `image` также допустим прямой URL в поле `payload.url`
       properties:
         text:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Текст сообщения (макс. 4000 символов)
           maxLength: 4000
         attachments:
-          type: array
-          nullable: true
+          type: [array, "null"]
           description: |
             Вложения. `null` = без изменений; пустой массив = удалить все вложения
           items:
             $ref: "#/components/schemas/AttachmentRequest"
         link:
-          allOf:
+          anyOf:
             - $ref: "#/components/schemas/NewMessageLink"
-          nullable: true
+            - type: "null"
           description: Ссылка на другое сообщение
         notify:
           type: boolean
@@ -1942,70 +2313,424 @@ components:
 
     NewMessageLink:
       type: object
-      description: Ссылка на другое сообщение
+      description: |
+        Ссылка на сообщение в чате или пост в канале (для ответа или пересылки).
+
+        Состав полей подтверждён официальной машинной спецификацией
+        `https://github.com/max-messenger/api-schema` → `schema.yaml`, схема `NewMessageLink` (проверено 2026-09-27):
+        обязательны `type` и `mid`; поля `chat` в исходящей форме **нет** — идентификатор чата
+        определяется получателем. В ответе API объект приходит в расширенной форме `LinkedMessage`
+        (с `sender`, `chat_id` и `message`).
       properties:
         type:
           type: string
           enum:
-            - reply
             - forward
+            - reply
           description: Тип ссылки
         mid:
           type: string
-          description: ID связанного сообщения
-        chat:
-          type: string
-          nullable: true
-          description: ID чата (для пересылок из другого чата)
+          minLength: 1
+          description: Идентификатор (`mid`) исходного сообщения
+      required:
+        - type
+        - mid
 
-    Attachment:
+    # ─── Комментарии (добавлены в августе 2026) ───────────────
+    # Источник: https://dev.max.ru/docs-api/changelog-api (раздел Comments) + схемы
+    # https://github.com/max-messenger/api-schema → schema.yaml. Проверено 2026-09-27.
+    CommentMessageBody:
       type: object
-      description: Вложение в сообщении (используется в MessageBody при чтении)
+      description: |
+        Содержимое комментария. В отличие от `MessageBody`, вложения **не допускаются**.
+      properties:
+        mid:
+          type: string
+          description: Уникальный идентификатор комментария (`mid`)
+        seq:
+          type: integer
+          format: int64
+          description: Порядковый номер (sequence) комментария в чате
+        text:
+          type: [string, "null"]
+          description: Текст комментария
+        markup:
+          type: [array, "null"]
+          description: Разобранная разметка текста (см. `MarkupElement`)
+          items:
+            $ref: "#/components/schemas/MarkupElement"
+      required:
+        - mid
+        - seq
+
+    CommentLinkedMessage:
+      type: object
+      description: |
+        Пересланный или отвеченный комментарий. В отличие от `LinkedMessage`, поле `message` — это
+        `CommentMessageBody`: у комментариев не бывает вложений.
+      properties:
+        type:
+          type: string
+          enum:
+            - forward
+            - reply
+          description: Тип связанного сообщения
+        message:
+          allOf:
+            - $ref: "#/components/schemas/CommentMessageBody"
+          description: Содержимое связанного комментария
+        sender:
+          anyOf:
+            - $ref: "#/components/schemas/User"
+            - type: "null"
+          description: |
+            Отправитель связанного комментария. Может быть `null`, если опубликовано от имени канала
+        chat_id:
+          type: [integer, "null"]
+          format: int64
+          description: ID чата, в котором комментарий был отправлен изначально
+      required:
+        - type
+        - message
+
+    CommentMessage:
+      type: object
+      description: |
+        Комментарий в канале. В отличие от `Message`, у комментария **нет** публичного `url`,
+        а в теле (`body`) **нет** вложений.
+      properties:
+        sender:
+          anyOf:
+            - $ref: "#/components/schemas/User"
+            - type: "null"
+          description: |
+            Автор комментария. Может быть `null`, если опубликовано от имени канала
+        recipient:
+          $ref: "#/components/schemas/Recipient"
+        timestamp:
+          type: integer
+          format: int64
+          description: Время создания (Unix timestamp в мс)
+        link:
+          anyOf:
+            - $ref: "#/components/schemas/CommentLinkedMessage"
+            - type: "null"
+          description: Пересланный или отвеченный комментарий
+        body:
+          allOf:
+            - $ref: "#/components/schemas/CommentMessageBody"
+          description: Содержимое комментария (только текст, без вложений)
+        stat:
+          anyOf:
+            - $ref: "#/components/schemas/MessageStat"
+            - type: "null"
+          description: Статистика комментария
+      required:
+        - body
+        - recipient
+        - timestamp
+
+    NewCommentBody:
+      type: object
+      description: |
+        Тело нового комментария. В отличие от `NewMessageBody`, вложения **не допускаются**.
+
+        Поддерживается форматирование текста — `markdown` или `html` (см. `TextFormat`).
+      properties:
+        text:
+          type: [string, "null"]
+          maxLength: 4000
+          description: Текст комментария
+        format:
+          anyOf:
+            - $ref: "#/components/schemas/TextFormat"
+            - type: "null"
+          description: Если задан, текст будет отформатирован согласно указанной разметке
+        link:
+          anyOf:
+            - $ref: "#/components/schemas/NewMessageLink"
+            - type: "null"
+          description: Ссылка на сообщение или комментарий (для ответа или пересылки)
+
+    CommentMessageList:
+      type: object
+      description: Страница списка комментариев
+      properties:
+        messages:
+          type: array
+          description: Список комментариев
+          items:
+            $ref: "#/components/schemas/CommentMessage"
+      required:
+        - messages
+
+    SendCommentResult:
+      type: object
+      description: Результат отправки комментария
+      properties:
+        message:
+          $ref: "#/components/schemas/CommentMessage"
+      required:
+        - message
+
+    AttachmentBase:
+      type: object
+      description: |
+        Базовый объект вложения: только поле `type`.
+
+        Наследуется всеми 9 подтипами ответа (`PhotoAttachment`, `VideoAttachment` и т.д.).
+        В ответах API и в схемах сообщений используется не сам `AttachmentBase`, а `Attachment`.
       properties:
         type:
           $ref: "#/components/schemas/AttachmentType"
-        payload:
-          type: object
-          nullable: true
-          description: Payload вложения (зависит от типа)
-          oneOf:
-            - $ref: "#/components/schemas/ImageAttachmentPayload"
-            - $ref: "#/components/schemas/VideoAttachmentPayload"
-            - $ref: "#/components/schemas/AudioAttachmentPayload"
-            - $ref: "#/components/schemas/FileAttachmentPayload"
-            - $ref: "#/components/schemas/ContactAttachmentPayload"
-            - $ref: "#/components/schemas/LocationAttachmentPayload"
-            - $ref: "#/components/schemas/InlineKeyboardAttachmentPayload"
-      required: [ type ]
+      required:
+        - type
 
-    ImageAttachmentPayload:
+    Attachment:
       type: object
-      description: Payload изображения (JPG, JPEG, PNG, GIF, TIFF, BMP, HEIC; до 50 МБ или 7680×7680 px — оба критерия должны выполняться)
+      description: |
+        Вложение в сообщении (используется в `MessageBody.attachments` при чтении).
+
+        Объединение 9 специализированных подтипов: базовое поле `type` берётся из `AttachmentBase`,
+        `payload` и остальные поля — из подтипа. Каждый подтип закрепляет своё значение `type`
+        через `enum`, поэтому `oneOf` однозначно выбирает ветку.
+
+        **Отличие от официальной схемы:** в официальной `schema.yaml` часть метаданных лежит на
+        верхнем уровне подтипа, а не в `payload`: `width`/`height`/`thumbnail`/`duration` у видео,
+        `filename`/`size` у файла, `width`/`height` у стикера, `title`/`description`/`image_url`
+        у превью ссылки, `transcription` у аудио. У нас все эти поля собраны внутри `payload`
+        соответствующего подтипа — набор полей и обязательность совпадают с официальными,
+        отличается только место. Решение зафиксировано в `AGENTS.md` § 2.1.
+
+        Неподтверждённых полей, которых нет в официальной схеме, в вложениях не осталось
+        (проверено 2026-09-27 по текстовым страницам доков).
       properties:
-        url:
-          type: string
-          description: URL изображения
-        token:
-          type: string
-          description: Токен медиафайла
+        type:
+          $ref: "#/components/schemas/AttachmentType"
+      required:
+        - type
+      discriminator:
+        propertyName: type
+        mapping:
+          image: "#/components/schemas/PhotoAttachment"
+          video: "#/components/schemas/VideoAttachment"
+          audio: "#/components/schemas/AudioAttachment"
+          file: "#/components/schemas/FileAttachment"
+          sticker: "#/components/schemas/StickerAttachment"
+          contact: "#/components/schemas/ContactAttachment"
+          inline_keyboard: "#/components/schemas/InlineKeyboardAttachment"
+          share: "#/components/schemas/ShareAttachment"
+          location: "#/components/schemas/LocationAttachment"
+      oneOf:
+        - $ref: "#/components/schemas/PhotoAttachment"
+        - $ref: "#/components/schemas/VideoAttachment"
+        - $ref: "#/components/schemas/AudioAttachment"
+        - $ref: "#/components/schemas/FileAttachment"
+        - $ref: "#/components/schemas/StickerAttachment"
+        - $ref: "#/components/schemas/ContactAttachment"
+        - $ref: "#/components/schemas/InlineKeyboardAttachment"
+        - $ref: "#/components/schemas/ShareAttachment"
+        - $ref: "#/components/schemas/LocationAttachment"
+
+    PhotoAttachment:
+      type: object
+      description: Вложение типа `image` — Изображение (JPG, JPEG, PNG, GIF, TIFF, BMP, HEIC; до 50 МБ или 7680×7680 px).
+      allOf:
+        - $ref: "#/components/schemas/AttachmentBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [image]
+              description: Тип вложения, однозначно задаёт подтип
+            payload:
+              $ref: "#/components/schemas/PhotoAttachmentPayload"
+          required:
+            - payload
+
+    VideoAttachment:
+      type: object
+      description: Вложение типа `video` — Видео (MP4, MOV, MKV, WEBM; до 250 МБ).
+      allOf:
+        - $ref: "#/components/schemas/AttachmentBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [video]
+              description: Тип вложения, однозначно задаёт подтип
+            payload:
+              $ref: "#/components/schemas/VideoAttachmentPayload"
+          required:
+            - payload
+
+    AudioAttachment:
+      type: object
+      description: Вложение типа `audio` — Аудио (MP3, WAV, M4A и др.; до 256 МБ или 60 мин) (должно быть единственным вложением в сообщении).
+      allOf:
+        - $ref: "#/components/schemas/AttachmentBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [audio]
+              description: Тип вложения, однозначно задаёт подтип
+            payload:
+              $ref: "#/components/schemas/AudioAttachmentPayload"
+          required:
+            - payload
+
+    FileAttachment:
+      type: object
+      description: Вложение типа `file` — Файл (TXT, DOC, PDF и др.; до 4 ГБ) (должно быть единственным вложением в сообщении).
+      allOf:
+        - $ref: "#/components/schemas/AttachmentBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [file]
+              description: Тип вложения, однозначно задаёт подтип
+            payload:
+              $ref: "#/components/schemas/FileAttachmentPayload"
+          required:
+            - payload
+
+    StickerAttachment:
+      type: object
+      description: Вложение типа `sticker` — Стикер (должно быть единственным вложением в сообщении).
+      allOf:
+        - $ref: "#/components/schemas/AttachmentBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [sticker]
+              description: Тип вложения, однозначно задаёт подтип
+            payload:
+              $ref: "#/components/schemas/StickerAttachmentPayload"
+          required:
+            - payload
+
+    ContactAttachment:
+      type: object
+      description: Вложение типа `contact` — Контакт пользователя (возвращается по кнопке `request_contact`) (должно быть единственным вложением в сообщении).
+      allOf:
+        - $ref: "#/components/schemas/AttachmentBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [contact]
+              description: Тип вложения, однозначно задаёт подтип
+            payload:
+              $ref: "#/components/schemas/ContactAttachmentPayload"
+          required:
+            - payload
+
+    InlineKeyboardAttachment:
+      type: object
+      description: Вложение типа `inline_keyboard` — Inline-клавиатура (до 210 кнопок в 30 рядах, до 7 в ряду).
+      allOf:
+        - $ref: "#/components/schemas/AttachmentBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [inline_keyboard]
+              description: Тип вложения, однозначно задаёт подтип
+            payload:
+              $ref: "#/components/schemas/InlineKeyboardAttachmentPayload"
+          required:
+            - payload
+
+    ShareAttachment:
+      type: object
+      description: 'Вложение типа `share` — Превью внешней ссылки (прикрепляется с `disable_link_preview: false`).'
+      allOf:
+        - $ref: "#/components/schemas/AttachmentBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [share]
+              description: Тип вложения, однозначно задаёт подтип
+            payload:
+              $ref: "#/components/schemas/ShareAttachmentPayload"
+          required:
+            - payload
+
+    LocationAttachment:
+      type: object
+      description: |
+        Вложение типа `location` — геолокация.
+
+        В отличие от остальных вложений, `payload` здесь нет: координаты лежат на верхнем уровне
+        (так в официальной машинной схеме, `https://github.com/max-messenger/api-schema` -> `schema.yaml`,
+        схемы `LocationAttachment` / `LocationAttachmentRequest`, проверено 2026-09-27).
+      allOf:
+        - $ref: "#/components/schemas/AttachmentBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [location]
+              description: Тип вложения, однозначно задаёт подтип
+            latitude:
+              type: number
+              format: double
+              description: Широта
+            longitude:
+              type: number
+              format: double
+              description: Долгота
+          required:
+            - latitude
+            - longitude
 
     VideoAttachmentPayload:
       type: object
-      description: Payload видео
+      description: |
+        Payload видео.
+
+        Обязательны `url` и `token` — официальная `schema.yaml`, схема `MediaAttachmentPayload`
+        (наследует `AttachmentPayload` + `token`, проверено 2026-09-27).
+
+        **Отличие от официальной схемы:** официально `width`, `height`, `thumbnail` и `duration`
+        лежат на верхнем уровне подтипа `VideoAttachment`, а `url` — строка. У нас `width`, `height`,
+        `thumbnail` и `duration` собраны в `payload`, а `url` — объект `VideoUrls` с готовыми
+        ссылками. Решение зафиксировано в `AGENTS.md` § 2.1.
       properties:
         url:
           $ref: "#/components/schemas/VideoUrls"
         token:
           type: string
           description: Токен медиафайла
+        width:
+          type: [integer, "null"]
+          description: Ширина видео
+        height:
+          type: [integer, "null"]
+          description: Высота видео
         duration:
-          type: integer
-          nullable: true
+          type: [integer, "null"]
           description: Длительность в секундах
+        thumbnail:
+          anyOf:
+            - $ref: "#/components/schemas/VideoThumbnail"
+            - type: "null"
+          description: Миниатюра видео
+      required:
+        - url
+        - token
 
     AudioAttachmentPayload:
       type: object
-      description: Payload аудио
+      description: |
+        Payload аудио.
+
+        Обязательны `url` и `token` — официальная `schema.yaml`, схема `MediaAttachmentPayload`
+        (наследует `AttachmentPayload` + `token`, проверено 2026-09-27).
       properties:
         url:
           type: string
@@ -2014,70 +2739,99 @@ components:
           type: string
           description: Токен медиафайла
         duration:
-          type: integer
-          nullable: true
+          type: [integer, "null"]
           description: Длительность в секундах
+        transcription:
+          type: [string, "null"]
+          description: |
+            Текстовая расшифровка аудио.
+
+            **Отличие от официальной схемы:** официально поле лежит на верхнем уровне подтипа
+            `AudioAttachment`, у нас — в `payload` (`AGENTS.md` § 2.1).
+      required:
+        - url
+        - token
 
     FileAttachmentPayload:
       type: object
-      description: Payload файла
+      description: |
+        Payload файлового вложения.
+
+        Обязательны `url`, `token`, `filename` и `size` — официальная `schema.yaml`, схема
+        `FileAttachmentPayload` (наследует `AttachmentPayload` + `token`) и подтип `FileAttachment`
+        (`filename` и `size`), проверено 2026-09-27.
+
+        **Отличие от официальной схемы:** официально `filename` и `size` лежат на верхнем уровне
+        подтипа `FileAttachment`, у нас — в `payload` (`AGENTS.md` § 2.1).
       properties:
         url:
           type: string
+          format: uri
           description: URL файла
         token:
           type: string
-          description: Токен медиафайла
-        file_size:
+          description: |
+            Токен файла. Используйте `token`, если хотите переиспользовать один и тот же файл в других сообщениях.
+        filename:
+          type: string
+          description: Имя загруженного файла
+        size:
           type: integer
+          format: int64
           description: Размер файла в байтах
+      required:
+        - url
+        - token
+        - filename
+        - size
 
     ContactAttachmentPayload:
       type: object
-      description: Payload контакта (отправляемого через request_contact)
+      description: |
+        Payload контакта (отправляемого через `request_contact`).
+
+        Состав полей подтверждён официальной машинной спецификацией
+        `https://github.com/max-messenger/api-schema` → `schema.yaml`, схема `ContactAttachmentPayload`
+        (проверено 2026-09-27): `vcf_info`, `hash`, `max_info` (`User`), все nullable.
+
+        **Расхождение доки:** на странице «Отправка сообщений со стикерами и контактами»
+        (`https://dev.max.ru/docs-api/use-cases/sending-messages/another-attachments`, проверено 2026-09-27)
+        пример отправки контакта показывает поля `name` и `contact_id`, которых нет в официальной схеме.
+        Спека следует машинной схеме — см. `AGENTS.md` § 5.
       properties:
         vcf_info:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Информация контакта в формате vCard. Перед хешированием необходимо преобразовать `\r\n` в реальные переносы строк
-        vcf_phone:
-          type: string
-          nullable: true
-          description: Номер телефона контакта
         max_info:
-          type: object
-          nullable: true
-          description: Дополнительная информация о пользователе
+          anyOf:
+            - $ref: "#/components/schemas/User"
+            - type: "null"
+          description: Информация о пользователе в МАКС
         hash:
-          type: string
+          type: [string, "null"]
           description: |
             Хеш для проверки подлинности контакта.
             Вычисляется как: `HMAC-SHA256(access_token, vcf_info)`
             где `access_token` — токен бота, а `vcf_info` — информация о контакте в формате vCard с заменёнными `\r\n` на реальные переносы строк.
             Если значения совпадают — пользователь поделился номером, привязанным к его аккаунту в МАКС.
 
-    LocationAttachmentPayload:
-      type: object
-      description: Payload геолокации (отправляемой через request_geo_location)
-      properties:
-        latitude:
-          type: number
-          format: double
-          description: Широта
-        longitude:
-          type: number
-          format: double
-          description: Долгота
-
     InlineKeyboardAttachmentPayload:
       type: object
-      description: Inline-клавиатура
+      description: |
+        Inline-клавиатура.
+
+        `buttons` обязателен — официальная `schema.yaml`, схема
+        `InlineKeyboardAttachmentRequestPayload` (`required: [buttons]`, `minItems: 1`,
+        проверено 2026-09-27).
       properties:
         buttons:
           type: array
+          minItems: 1
           description: Ряды кнопок (каждый элемент — массив кнопок; например `[[btn1, btn2], [btn3]]`)
           items:
             $ref: "#/components/schemas/InlineKeyboardButtonRow"
+      required:
+        - buttons
 
     InlineKeyboardButtonRow:
       type: array
@@ -2101,8 +2855,7 @@ components:
           type: string
           description: Текст кнопки (2048 символов макс., поддерживает форматирование)
         payload:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: |
             Пользовательские данные, возвращаемые в `callback`.
             Для `clipboard` — текст для копирования.
@@ -2110,84 +2863,431 @@ components:
 
             Если поле отсутствует, `callback` возвращается как `null`.
         url:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Ссылка (для типа `link`; макс. 2048 символов)
         intent:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: |
             Интент для `request_geo_location`:
             - `sendOnce` — однократная отправка
             - `sendLive` — отправка текущего местоположения в реальном времени
         web_app:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: |
             Публичное имя (username) бота или ссылка на него, чьё мини-приложение нужно открыть
             (для типа `open_app`). URL мини-приложения задаётся на платформе MAX, а не в кнопке.
         contact_id:
-          type: integer
-          nullable: true
+          type: [integer, "null"]
           description: Идентификатор бота, чьё мини-приложение нужно открыть (альтернатива `web_app` для типа `open_app`)
       required: [ type, text ]
 
-    AttachmentRequest:
+    AttachmentRequestBase:
       type: object
-      description: Запрос на вложение
+      description: |
+        Базовый объект запроса на вложение: только поле `type`.
+
+        Наследуется всеми 9 подтипами запроса (`PhotoAttachmentRequest`, `VideoAttachmentRequest` и т.д.).
+        В схемах запросов используется не сам `AttachmentRequestBase`, а `AttachmentRequest`.
       properties:
         type:
           $ref: "#/components/schemas/AttachmentType"
-        payload:
-          type: object
-          nullable: true
-          description: Payload вложения
+      required:
+        - type
+
+    AttachmentRequest:
+      type: object
+      description: |
+        Вложение в запросе (используется в `NewMessageBody.attachments` при отправке сообщений).
+
+        Объединение 9 специализированных подтипов, зеркало `Attachment` на стороне запроса:
+        базовое поле `type` берётся из `AttachmentRequestBase`, `payload` — из подтипа.
+        Каждый подтип закрепляет своё значение `type` через `enum`, поэтому `oneOf` выбирает
+        ветку однозначно.
+      properties:
+        type:
+          $ref: "#/components/schemas/AttachmentType"
+      required:
+        - type
+      discriminator:
+        propertyName: type
+        mapping:
+          image: "#/components/schemas/PhotoAttachmentRequest"
+          video: "#/components/schemas/VideoAttachmentRequest"
+          audio: "#/components/schemas/AudioAttachmentRequest"
+          file: "#/components/schemas/FileAttachmentRequest"
+          sticker: "#/components/schemas/StickerAttachmentRequest"
+          contact: "#/components/schemas/ContactAttachmentRequest"
+          inline_keyboard: "#/components/schemas/InlineKeyboardAttachmentRequest"
+          share: "#/components/schemas/ShareAttachmentRequest"
+          location: "#/components/schemas/LocationAttachmentRequest"
+      oneOf:
+        - $ref: "#/components/schemas/PhotoAttachmentRequest"
+        - $ref: "#/components/schemas/VideoAttachmentRequest"
+        - $ref: "#/components/schemas/AudioAttachmentRequest"
+        - $ref: "#/components/schemas/FileAttachmentRequest"
+        - $ref: "#/components/schemas/StickerAttachmentRequest"
+        - $ref: "#/components/schemas/ContactAttachmentRequest"
+        - $ref: "#/components/schemas/InlineKeyboardAttachmentRequest"
+        - $ref: "#/components/schemas/ShareAttachmentRequest"
+        - $ref: "#/components/schemas/LocationAttachmentRequest"
+
+    PhotoAttachmentRequest:
+      type: object
+      description: Вложение типа `image` — изображения.
+      allOf:
+        - $ref: "#/components/schemas/AttachmentRequestBase"
+        - type: object
           properties:
-            token:
+            type:
               type: string
-              nullable: true
-              description: Токен медиафайла (из ответа POST /uploads)
-            url:
+              enum: [image]
+              description: Тип вложения, однозначно задаёт подтип
+            payload:
+              $ref: "#/components/schemas/PhotoAttachmentRequestPayload"
+          required:
+            - payload
+
+    VideoAttachmentRequest:
+      type: object
+      description: Вложение типа `video` — видео.
+      allOf:
+        - $ref: "#/components/schemas/AttachmentRequestBase"
+        - type: object
+          properties:
+            type:
               type: string
-              nullable: true
-              description: URL медиафайла
-            buttons:
-              type: array
-              nullable: true
-              description: Ряды inline-клавиатуры
-              items:
-                $ref: "#/components/schemas/InlineKeyboardButtonRow"
-      required: [ type ]
+              enum: [video]
+              description: Тип вложения, однозначно задаёт подтип
+            payload:
+              $ref: "#/components/schemas/UploadedInfo"
+          required:
+            - payload
+
+    AudioAttachmentRequest:
+      type: object
+      description: Вложение типа `audio` — аудио (должно быть единственным вложением в сообщении).
+      allOf:
+        - $ref: "#/components/schemas/AttachmentRequestBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [audio]
+              description: Тип вложения, однозначно задаёт подтип
+            payload:
+              $ref: "#/components/schemas/UploadedInfo"
+          required:
+            - payload
+
+    FileAttachmentRequest:
+      type: object
+      description: Вложение типа `file` — файла (должно быть единственным вложением в сообщении).
+      allOf:
+        - $ref: "#/components/schemas/AttachmentRequestBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [file]
+              description: Тип вложения, однозначно задаёт подтип
+            payload:
+              $ref: "#/components/schemas/UploadedInfo"
+          required:
+            - payload
+
+    StickerAttachmentRequest:
+      type: object
+      description: Вложение типа `sticker` — стикера (должно быть единственным вложением в сообщении).
+      allOf:
+        - $ref: "#/components/schemas/AttachmentRequestBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [sticker]
+              description: Тип вложения, однозначно задаёт подтип
+            payload:
+              $ref: "#/components/schemas/StickerAttachmentRequestPayload"
+          required:
+            - payload
+
+    ContactAttachmentRequest:
+      type: object
+      description: Вложение типа `contact` — контакта (должно быть единственным вложением в сообщении).
+      allOf:
+        - $ref: "#/components/schemas/AttachmentRequestBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [contact]
+              description: Тип вложения, однозначно задаёт подтип
+            payload:
+              $ref: "#/components/schemas/ContactAttachmentRequestPayload"
+          required:
+            - payload
+
+    InlineKeyboardAttachmentRequest:
+      type: object
+      description: Вложение типа `inline_keyboard` — inline-клавиатуры.
+      allOf:
+        - $ref: "#/components/schemas/AttachmentRequestBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [inline_keyboard]
+              description: Тип вложения, однозначно задаёт подтип
+            payload:
+              $ref: "#/components/schemas/InlineKeyboardAttachmentPayload"
+          required:
+            - payload
+
+    ShareAttachmentRequest:
+      type: object
+      description: Вложение типа `share` — превью внешней ссылки.
+      allOf:
+        - $ref: "#/components/schemas/AttachmentRequestBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [share]
+              description: Тип вложения, однозначно задаёт подтип
+            payload:
+              $ref: "#/components/schemas/ShareAttachmentPayload"
+          required:
+            - payload
+
+    LocationAttachmentRequest:
+      type: object
+      description: |
+        Вложение типа `location` — геолокация.
+
+        В отличие от остальных вложений, `payload` здесь нет: координаты лежат на верхнем уровне
+        (так в официальной машинной схеме, `https://github.com/max-messenger/api-schema` -> `schema.yaml`,
+        схемы `LocationAttachment` / `LocationAttachmentRequest`, проверено 2026-09-27).
+      allOf:
+        - $ref: "#/components/schemas/AttachmentRequestBase"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [location]
+              description: Тип вложения, однозначно задаёт подтип
+            latitude:
+              type: number
+              format: double
+              description: Широта
+            longitude:
+              type: number
+              format: double
+              description: Долгота
+          required:
+            - latitude
+            - longitude
+
+    ShareAttachmentPayload:
+      type: object
+      description: |
+        Payload превью внешней ссылки — общее для запроса и ответа.
+
+        `title`, `description` и `image_url` заполняются сервером при формировании превью и
+        приходят только в ответе; официальная `schema.yaml` объявляет их на верхнем уровне подтипа
+        `ShareAttachment` (все три nullable, `required` только `payload`), у нас — в `payload`
+        (`AGENTS.md` § 2.1, проверено 2026-09-27).
+      properties:
+        url:
+          type: [string, "null"]
+          minLength: 1
+          description: URL внешней ссылки, прикрепляемой как превью
+        token:
+          type: [string, "null"]
+          description: Токен уже загруженного медиафайла
+        title:
+          type: [string, "null"]
+          description: Заголовок превью ссылки
+        description:
+          type: [string, "null"]
+          description: Описание превью ссылки
+        image_url:
+          type: [string, "null"]
+          description: Изображение превью ссылки
+
+    StickerAttachmentPayload:
+      type: object
+      description: |
+        Payload вложения-стикера (ответная сторона).
+
+        Обязательны `url`, `code`, `width` и `height` — официальная `schema.yaml`:
+        `StickerAttachmentPayload` наследует `AttachmentPayload` (`url`) и добавляет `code`,
+        а подтип `StickerAttachment` требует `width` и `height` (проверено 2026-09-27).
+
+        **Отличие от официальной схемы:** официально `width` и `height` лежат на верхнем уровне
+        подтипа `StickerAttachment`, у нас — в `payload` (`AGENTS.md` § 2.1). При отправке стикера
+        код передаётся в `StickerAttachmentRequestPayload.code`.
+      properties:
+        url:
+          type: string
+          format: uri
+          description: URL стикера
+        code:
+          type: string
+          description: Идентификатор стикера
+        width:
+          type: integer
+          description: Ширина стикера
+        height:
+          type: integer
+          description: Высота стикера
+      required:
+        - url
+        - code
+        - width
+        - height
+
+    UploadedInfo:
+      type: object
+      description: |
+        Данные загруженного файла.
+
+        Возвращаются ответом `POST /uploads` и используются как `payload` во вложениях
+        `video`, `audio`, `file` при отправке сообщений. В официальной схеме объект называется
+        `UploadedInfo` и содержит только `token`.
+      properties:
+        url:
+          type: string
+          format: uri
+          description: URL файла для загрузки (без срока действия)
+        token:
+          type: [string, "null"]
+          description: Токен файла (уникальный идентификатор загруженного медиа)
+
+    PhotoAttachmentRequestPayload:
+      type: object
+      description: |
+        Payload для прикрепления изображений к сообщению (тип `image`).
+
+        Можно передать `token` уже загруженного файла, внешний `url`, либо `photos` — map
+        загруженных изображений одним вложением (в официальной схеме `photos` — объект
+        с дополнительными свойствами-токенами `PhotoToken`).
+      properties:
+        token:
+          type: [string, "null"]
+          description: Токен загруженного изображения (из `POST /uploads`)
+        url:
+          type: [string, "null"]
+          minLength: 1
+          description: URL внешнего изображения
+        photos:
+          type: [object, "null"]
+          additionalProperties:
+            type: string
+          description: Несколько загруженных изображений одним вложением (ключ — произвольный, значение — токен)
+
+    StickerAttachmentRequestPayload:
+      type: object
+      description: Payload для прикрепления стикера к сообщению.
+      properties:
+        code:
+          type: string
+          description: Код стикера
+      required:
+        - code
+
+    ContactAttachmentRequestPayload:
+      type: object
+      description: |
+        Payload для прикрепления контакта к сообщению.
+
+        В отличие от `ContactAttachmentPayload` (ответная сторона) здесь есть `name` и
+        `contact_id` — они есть в официальной схеме именно у *запроса* контакта.
+      properties:
+        name:
+          type: [string, "null"]
+          description: Имя контакта
+        contact_id:
+          type: [integer, "null"]
+          format: int64
+          description: Идентификатор контакта, если он зарегистрирован в MAX
+        vcf_info:
+          type: [string, "null"]
+          description: Полная информация о контакте в формате VCF
+        vcf_phone:
+          type: [string, "null"]
+          description: Телефон контакта в формате VCF
+
+    VideoThumbnail:
+      type: object
+      description: |
+        Миниатюра видео.
+
+        Состав полей подтверждён официальной машинной спецификацией
+        `https://github.com/max-messenger/api-schema` → `schema.yaml`, схема `VideoThumbnail`
+        (проверено 2026-09-27): единственное поле `url`, обязательное.
+      properties:
+        url:
+          type: string
+          description: URL изображения миниатюры
+      required:
+        - url
 
     VideoUrls:
       type: object
-      description: URL для воспроизведения/скачивания видео
+      description: |
+        URL-ы для скачивания и потокового воспроизведения видео по разрешениям.
+
+        Состав полей подтверждён официальной машинной спецификацией
+        `https://github.com/max-messenger/api-schema` → `schema.yaml`, схема `VideoUrls` (проверено 2026-09-27).
+        Отдельной страницы объекта в доках нет; на странице метода
+        `https://dev.max.ru/docs-api/methods/GET/videos/-videoToken-` (проверено 2026-09-27) указан только
+        сам объект `VideoUrls` без раскрытия полей.
+
+        Все поля nullable — приходят только те разрешения, которые реально доступны.
       properties:
-        mp4:
-          type: string
-          nullable: true
-          description: URL для скачивания в формате MP4
-        preview:
-          type: string
-          nullable: true
-          description: URL превью видео
+        mp4_1080:
+          type: [string, "null"]
+          description: URL видео в 1080p, если доступно
+        mp4_720:
+          type: [string, "null"]
+          description: URL видео в 720p, если доступно
+        mp4_480:
+          type: [string, "null"]
+          description: URL видео в 480p, если доступно
+        mp4_360:
+          type: [string, "null"]
+          description: URL видео в 360p, если доступно
+        mp4_240:
+          type: [string, "null"]
+          description: URL видео в 240p, если доступно
+        mp4_144:
+          type: [string, "null"]
+          description: URL видео в 144p, если доступно
+        hls:
+          type: [string, "null"]
+          description: URL потоковой трансляции (HLS), если доступно
 
     VideoInfo:
       type: object
-      description: Информация о видео
+      description: |
+        Информация о видео-вложении (ответ `GET /videos/{videoToken}`).
+
+        Соответствует официальной схеме `VideoAttachmentDetails` (проверено 2026-09-27); локальное имя `VideoInfo`
+        оставлено для обратной совместимости. Обязательны `token`, `width`, `height`, `duration`;
+        `urls` и `thumbnail` nullable.
       properties:
         token:
           type: string
           description: Токен видео-вложения
         urls:
-          allOf:
+          anyOf:
             - $ref: "#/components/schemas/VideoUrls"
-          nullable: true
+            - type: "null"
           description: URL для скачивания/воспроизведения (null, если недоступны)
         thumbnail:
-          allOf:
+          anyOf:
             - $ref: "#/components/schemas/PhotoAttachmentPayload"
-          nullable: true
+            - type: "null"
           description: Миниатюра видео
         width:
           type: integer
@@ -2198,100 +3298,78 @@ components:
         duration:
           type: integer
           description: Длительность в секундах
+      required:
+        - token
+        - width
+        - height
+        - duration
 
     PhotoAttachmentPayload:
       type: object
-      description: Payload фото-вложения
+      description: |
+        Payload фото-вложения: метаданные изображения.
+
+        Обязательны `photo_id`, `token`, `url` — официальная `schema.yaml`, схема `PhotoAttachmentPayload`
+        (проверено 2026-09-27). Используется также как миниатюра видео в `VideoInfo.thumbnail`
+        (официальный `VideoAttachmentDetails.thumbnail` ссылается именно на `PhotoAttachmentPayload`).
+
+        Полей `width`/`height` здесь нет: официальная схема объявляет их для видео и стикера, но
+        сознательно не для фото, и страницы доков их тоже не упоминают. Удалены 2026-09-27.
       properties:
+        photo_id:
+          type: integer
+          format: int64
+          description: Уникальный идентификатор изображения (из `POST /uploads`)
+        token:
+          type: string
+          description: Токен изображения (из `POST /uploads`)
         url:
           type: string
           format: uri
           description: URL изображения
-        width:
-          type: integer
-          description: Ширина
-        height:
-          type: integer
-          description: Высота
+      required:
+        - photo_id
+        - token
+        - url
 
     Subscription:
       type: object
-      description: Подписка на webhook
+      description: |
+        Подписка на webhook.
+
+        Поля `url` и `time` обязательны, `update_types` опционален — подтверждено официальной машинной
+        спецификацией `https://github.com/max-messenger/api-schema` → `schema.yaml`, схема `Subscription`
+        (проверено 2026-09-27).
       properties:
         url:
           type: string
           format: uri
           description: URL webhook
-        update_types:
-          type: array
-          nullable: true
-          description: Типы обновлений
-          items:
-            type: string
-
-    FailedUserDetails:
-      type: object
-      description: Подробности ошибки при добавлении пользователя
-      properties:
-        user_id:
+        time:
           type: integer
           format: int64
-          description: ID пользователя
-        error:
-          type: string
-          description: Описание ошибки
+          description: Unix-время создания подписки (в миллисекундах)
+        update_types:
+          type: [array, "null"]
+          uniqueItems: true
+          description: Типы обновлений, на которые подписан бот
+          items:
+            type: string
+            minLength: 1
+            examples:
+              - message_created
+              - bot_started
+      required:
+        - url
+        - time
 
-    Update:
+    UpdateBase:
       type: object
       description: |
-        Объект обновления (события) в чатах/каналах.
-        Возвращается через Webhook (POST /subscriptions) или Long Polling (GET /updates).
+        Базовые поля любого события MAX.
 
-        **Типы событий:**
-
-        | Тип | Описание |
-        |-----|----------|
-        | `bot_added` | Бот добавлен в чат/канал |
-        | `bot_started` | Пользователь начал/возобновил разговор с ботом |
-        | `bot_stopped` | Пользователь остановил/удалил бота (с `dialog_removed` при удалении) |
-        | `bot_removed` | Бот удалён из чата/канала |
-        | `chat_title_changed` | Название чата/канала изменено |
-        | `dialog_cleared` | Пользователь очистил историю диалога |
-        | `dialog_muted` | Пользователь отключил уведомления диалога |
-        | `dialog_unmuted` | Пользователь включил уведомления диалога |
-        | `dialog_removed` | Пользователь удалил диалог (также вызывает `bot_stopped`) |
-        | `message_callback` | Пользователь нажал кнопку |
-        | `message_created` | Новое сообщение или пост в канале |
-        | `message_edited` | Сообщение отредактировано |
-        | `message_removed` | Сообщение удалено |
-        | `user_added` | Новый пользователь вступил в чат/канал |
-        | `user_removed` | Пользователь удалён/покинул чат/канал |
-
-        Набор полей зависит от `update_type`. Поля не обязательны — реальный API отдаёт
-        только поля, относящиеся к конкретному типу события.
-
-        **Поля по типам событий:**
-
-        | Тип события | Поля |
-        |-------------|------|
-        | `bot_added` | `timestamp`, `chat_id`, `user`, `is_channel` |
-        | `bot_started` | `timestamp`, `chat_id`, `user`, `payload`, `user_locale` |
-        | `bot_stopped` | `timestamp`, `chat_id`, `user`, `user_locale` |
-        | `bot_removed` | `timestamp`, `chat_id`, `user`, `is_channel` |
-        | `chat_title_changed` | `timestamp`, `chat_id`, `user`, `title` |
-        | `dialog_cleared` | `timestamp`, `chat_id`, `user`, `user_locale` |
-        | `dialog_muted` | `timestamp`, `chat_id`, `user`, `muted_until`, `user_locale` |
-        | `dialog_unmuted` | `timestamp`, `chat_id`, `user`, `user_locale` |
-        | `dialog_removed` | `timestamp`, `chat_id`, `user`, `user_locale` |
-        | `message_callback` | `timestamp`, `callback`, `user_locale` |
-        | `message_created` | `timestamp`, `message`, `user_locale` |
-        | `message_edited` | `timestamp`, `message` |
-        | `message_removed` | `timestamp`, `message_id`, `chat_id`, `user_id` |
-        | `user_added` | `timestamp`, `chat_id`, `user`, `inviter_id`, `is_channel` |
-        | `user_removed` | `timestamp`, `chat_id`, `user`, `admin_id`, `is_channel` |
-
-        Примеры в блоке `examples` составлены по таблице полей выше. `bot_added` соответствует примеру из
-        официальной документации, остальные — иллюстративные.
+        Наследуется всеми 19 подтипами `Update` (`MessageCreatedUpdate`, `BotAddedToChatUpdate` и т.д.).
+        В ответах API и вебхуках используется не сам `UpdateBase`, а `Update` — объединение подтипов.
       properties:
         update_type:
           $ref: "#/components/schemas/UpdateType"
@@ -2299,193 +3377,125 @@ components:
           type: integer
           format: int64
           description: Время события (Unix timestamp в мс)
-        user_locale:
-          type: string
-          nullable: true
-          description: Текущий язык пользователя в формате IETF BCP 47 (например, "ru")
-        chat_id:
+      required:
+        - update_type
+        - timestamp
+
+    Update:
+      type: object
+      description: |
+        Событие MAX (обновление). Приходит через вебхук (`POST /subscriptions`) или Long Polling
+        (`GET /updates`).
+
+        Это объединение 19 специализированных подтипов: два базовых поля (`update_type`, `timestamp`)
+        берутся из `UpdateBase`, остальные зависят от типа события. Каждый подтип закрепляет своё
+        значение в `update_type` через `enum`, поэтому `oneOf` однозначно выбирает ветку, а `discriminator`
+        позволяет кодогенераторам строить наследование.
+
+        | Тип события | Схема | Событие |
+        |-------------|-------|---------|
+        | `bot_added` | `BotAddedToChatUpdate` | Бот добавлен в чат/канал |
+        | `bot_admin_permissions_changed` | `BotAdminPermissionsChangedUpdate` | Изменились права администратора бота в чате/канале |
+        | `bot_removed` | `BotRemovedFromChatUpdate` | Бот удалён из чата/канала |
+        | `bot_started` | `BotStartedUpdate` | Пользователь начал или возобновил разговор с ботом |
+        | `bot_stopped` | `BotStoppedUpdate` | Пользователь остановил или удалил бота |
+        | `chat_title_changed` | `ChatTitleChangedUpdate` | Название чата/канала изменено |
+        | `comment_created` | `CommentCreatedUpdate` | Создан комментарий к посту в канале |
+        | `comment_edited` | `CommentEditedUpdate` | Комментарий отредактирован |
+        | `comment_removed` | `CommentRemovedUpdate` | Комментарий удалён |
+        | `dialog_cleared` | `DialogClearedUpdate` | Пользователь очистил историю диалога |
+        | `dialog_muted` | `DialogMutedUpdate` | Пользователь отключил уведомления диалога |
+        | `dialog_removed` | `DialogRemovedUpdate` | Пользователь удалил диалог (также вызывается `bot_stopped`) |
+        | `dialog_unmuted` | `DialogUnmutedUpdate` | Пользователь включил уведомления диалога |
+        | `message_callback` | `MessageCallbackUpdate` | Пользователь нажал кнопку inline-клавиатуры |
+        | `message_created` | `MessageCreatedUpdate` | Новое сообщение или пост в канале |
+        | `message_edited` | `MessageEditedUpdate` | Сообщение отредактировано |
+        | `message_removed` | `MessageRemovedUpdate` | Сообщение удалено |
+        | `user_added` | `UserAddedToChatUpdate` | Новый пользователь вступил в чат/канал |
+        | `user_removed` | `UserRemovedFromChatUpdate` | Пользователь удалён или покинул чат/канал |
+
+        События комментариев (`comment_created`, `comment_edited`, `comment_removed`) бот получает,
+        **только если он администратор канала** с правом `read_all_messages`.
+
+        Структура подтипов и их поля подтверждены официальной машинной спецификацией
+        `https://github.com/max-messenger/api-schema` -> `schema.yaml` (`*Update`, проверено 2026-09-27).
+
+        Отличие от официальной схемы: там базовая часть называется `Update` и не содержит `oneOf`,
+        из-за чего `required` подтипов не проверяется валидатором. Здесь база вынесена в `UpdateBase`,
+        а `Update` — точка входа с `oneOf` из 19 подтипов.
+      properties:
+        update_type:
+          $ref: "#/components/schemas/UpdateType"
+        timestamp:
           type: integer
           format: int64
-          description: ID чата/диалога, в котором произошло событие. Для message_created, message_edited, message_callback отсутствует на верхнем уровне — источник message.recipient.chat_id (для message_callback — callback.message.recipient.chat_id).
-        user:
-          allOf:
-            - $ref: "#/components/schemas/User"
-          description: Пользователь, связанный с событием. Присутствует для bot_*, dialog_*, user_*. Для message_created, message_edited отсутствует на верхнем уровне — источник message.sender (для message_callback — callback.message.sender).
-        is_channel:
-          type: boolean
-          description: '`true`, если событие произошло в канале (а не в чате)'
-          nullable: true
-        title:
-          type: string
-          nullable: true
-          description: Новое название чата (для события chat_title_changed)
-        payload:
-          type: string
-          nullable: true
-          description: Дополнительные данные из диплинков, переданные при запуске бота. До 512 символов (для события bot_started)
-        muted_until:
-          type: integer
-          format: int64
-          nullable: true
-          description: Время, до которого диалог был отключён (Unix timestamp в мс, для события dialog_muted)
-        message_id:
-          type: string
-          nullable: true
-          description: ID удалённого сообщения (для события message_removed)
-        user_id:
-          type: integer
-          format: int64
-          nullable: true
-          description: Пользователь, удаливший сообщение (для события message_removed)
-        inviter_id:
-          type: integer
-          format: int64
-          nullable: true
-          description: Пользователь, добавивший нового пользователя в чат. Может быть null, если пользователь присоединился по ссылке (для события user_added)
-        admin_id:
-          type: integer
-          format: int64
-          nullable: true
-          description: Администратор, удаливший пользователя из чата. Может быть null, если пользователь покинул чат сам (для события user_removed)
-        message:
-          allOf:
-            - $ref: "#/components/schemas/Message"
-          nullable: true
-          description: Сообщение (для событий message_created, message_edited; для message_callback — внутри callback.message)
-        callback:
-          type: object
-          nullable: true
-          description: Данные callback-кнопки (для события message_callback)
+          description: Время события (Unix timestamp в мс)
+      required:
+        - update_type
+        - timestamp
+      discriminator:
+        propertyName: update_type
+        mapping:
+          message_created: "#/components/schemas/MessageCreatedUpdate"
+          message_edited: "#/components/schemas/MessageEditedUpdate"
+          message_removed: "#/components/schemas/MessageRemovedUpdate"
+          message_callback: "#/components/schemas/MessageCallbackUpdate"
+          comment_created: "#/components/schemas/CommentCreatedUpdate"
+          comment_edited: "#/components/schemas/CommentEditedUpdate"
+          comment_removed: "#/components/schemas/CommentRemovedUpdate"
+          bot_added: "#/components/schemas/BotAddedToChatUpdate"
+          bot_admin_permissions_changed: "#/components/schemas/BotAdminPermissionsChangedUpdate"
+          bot_removed: "#/components/schemas/BotRemovedFromChatUpdate"
+          user_added: "#/components/schemas/UserAddedToChatUpdate"
+          user_removed: "#/components/schemas/UserRemovedFromChatUpdate"
+          bot_started: "#/components/schemas/BotStartedUpdate"
+          bot_stopped: "#/components/schemas/BotStoppedUpdate"
+          chat_title_changed: "#/components/schemas/ChatTitleChangedUpdate"
+          dialog_cleared: "#/components/schemas/DialogClearedUpdate"
+          dialog_muted: "#/components/schemas/DialogMutedUpdate"
+          dialog_unmuted: "#/components/schemas/DialogUnmutedUpdate"
+          dialog_removed: "#/components/schemas/DialogRemovedUpdate"
+      oneOf:
+        - $ref: "#/components/schemas/MessageCreatedUpdate"
+        - $ref: "#/components/schemas/MessageEditedUpdate"
+        - $ref: "#/components/schemas/MessageRemovedUpdate"
+        - $ref: "#/components/schemas/MessageCallbackUpdate"
+        - $ref: "#/components/schemas/CommentCreatedUpdate"
+        - $ref: "#/components/schemas/CommentEditedUpdate"
+        - $ref: "#/components/schemas/CommentRemovedUpdate"
+        - $ref: "#/components/schemas/BotAddedToChatUpdate"
+        - $ref: "#/components/schemas/BotAdminPermissionsChangedUpdate"
+        - $ref: "#/components/schemas/BotRemovedFromChatUpdate"
+        - $ref: "#/components/schemas/UserAddedToChatUpdate"
+        - $ref: "#/components/schemas/UserRemovedFromChatUpdate"
+        - $ref: "#/components/schemas/BotStartedUpdate"
+        - $ref: "#/components/schemas/BotStoppedUpdate"
+        - $ref: "#/components/schemas/ChatTitleChangedUpdate"
+        - $ref: "#/components/schemas/DialogClearedUpdate"
+        - $ref: "#/components/schemas/DialogMutedUpdate"
+        - $ref: "#/components/schemas/DialogUnmutedUpdate"
+        - $ref: "#/components/schemas/DialogRemovedUpdate"
+    MessageCreatedUpdate:
+      type: object
+      description: Событие `message_created` — новое сообщение или пост в канале.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
           properties:
-            callback_id:
+            update_type:
               type: string
-              description: ID callback-кнопки
-            payload:
-              type: string
-              nullable: true
-              description: Payload кнопки
+              enum: [message_created]
+              description: Тип события, однозначно задаёт подтип `Update`
             message:
               allOf:
                 - $ref: "#/components/schemas/Message"
-              nullable: true
-              description: Изначальное сообщение с встроенной клавиатурой. Может быть null, если оно было удалено к моменту получения события
+              description: Сообщение
+            user_locale:
+              type: [string, "null"]
+              description: Текущий язык пользователя в формате IETF BCP 47 (например, `ru`)
+          required:
+            - message
       examples:
-        - summary: bot_added — бот добавлен в чат (пример из документации)
-          value:
-            update_type: bot_added
-            timestamp: 1755000000000
-            chat_id: 123456789
-            user:
-              user_id: 1000000001
-              first_name: Иван
-              last_name: Иванов
-              username: ivan
-              is_bot: false
-            is_channel: false
-        - summary: bot_started — пользователь начал/возобновил разговор с ботом
-          value:
-            update_type: bot_started
-            timestamp: 1755000001000
-            chat_id: 123456789
-            user:
-              user_id: 1000000001
-              first_name: Иван
-              username: ivan
-              is_bot: false
-            payload: /start promo_2026
-            user_locale: ru
-        - summary: bot_stopped — пользователь остановил/удалил бота
-          value:
-            update_type: bot_stopped
-            timestamp: 1755000002000
-            chat_id: 123456789
-            user:
-              user_id: 1000000001
-              first_name: Иван
-              username: ivan
-              is_bot: false
-            user_locale: ru
-        - summary: bot_removed — бот удалён из чата/канала
-          value:
-            update_type: bot_removed
-            timestamp: 1755000003000
-            chat_id: 987654321
-            user:
-              user_id: 1000000002
-              first_name: Пётр
-              is_bot: false
-            is_channel: false
-        - summary: chat_title_changed — изменено название чата/канала
-          value:
-            update_type: chat_title_changed
-            timestamp: 1755000004000
-            chat_id: 987654321
-            user:
-              user_id: 1000000002
-              first_name: Пётр
-              is_bot: false
-            title: Новая команда
-        - summary: dialog_cleared — пользователь очистил историю диалога
-          value:
-            update_type: dialog_cleared
-            timestamp: 1755000005000
-            chat_id: 123456789
-            user:
-              user_id: 1000000001
-              first_name: Иван
-              is_bot: false
-            user_locale: ru
-        - summary: dialog_muted — отключены уведомления диалога
-          value:
-            update_type: dialog_muted
-            timestamp: 1755000006000
-            chat_id: 123456789
-            user:
-              user_id: 1000000001
-              first_name: Иван
-              is_bot: false
-            muted_until: 1755086400000
-            user_locale: ru
-        - summary: dialog_unmuted — включены уведомления диалога
-          value:
-            update_type: dialog_unmuted
-            timestamp: 1755000007000
-            chat_id: 123456789
-            user:
-              user_id: 1000000001
-              first_name: Иван
-              is_bot: false
-            user_locale: ru
-        - summary: dialog_removed — диалог удалён
-          value:
-            update_type: dialog_removed
-            timestamp: 1755000008000
-            chat_id: 123456789
-            user:
-              user_id: 1000000001
-              first_name: Иван
-              is_bot: false
-            user_locale: ru
-        - summary: message_callback — пользователь нажал кнопку
-          value:
-            update_type: message_callback
-            timestamp: 1755000009000
-            callback:
-              callback_id: btn_order_1
-              payload: order:42
-              message:
-                sender:
-                  user_id: 1000000001
-                  first_name: Иван
-                  is_bot: false
-                recipient:
-                  chat_id: 123456789
-                  chat_type: dialog
-                timestamp: 1754999400000
-                body:
-                  mid: mid_20260814_001
-                  text: Заказ пиццы
-            user_locale: ru
         - summary: message_created — новое сообщение или пост в канале
           value:
             update_type: message_created
@@ -2501,8 +3511,28 @@ components:
               timestamp: 1755000010000
               body:
                 mid: mid_20260814_002
+                seq: 0
                 text: Привет!
             user_locale: ru
+
+    MessageEditedUpdate:
+      type: object
+      description: Событие `message_edited` — сообщение отредактировано.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [message_edited]
+              description: Тип события, однозначно задаёт подтип `Update`
+            message:
+              allOf:
+                - $ref: "#/components/schemas/Message"
+              description: Сообщение
+          required:
+            - message
+      examples:
         - summary: message_edited — сообщение отредактировано
           value:
             update_type: message_edited
@@ -2518,7 +3548,36 @@ components:
               timestamp: 1755000010000
               body:
                 mid: mid_20260814_002
+                seq: 0
                 text: Привет! (исправлено)
+
+    MessageRemovedUpdate:
+      type: object
+      description: Событие `message_removed` — сообщение удалено.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [message_removed]
+              description: Тип события, однозначно задаёт подтип `Update`
+            chat_id:
+              type: integer
+              format: int64
+              description: ID чата/диалога, в котором произошло событие
+            message_id:
+              type: string
+              description: ID удалённого сообщения
+            user_id:
+              type: integer
+              format: int64
+              description: Пользователь, удаливший сообщение
+          required:
+            - chat_id
+            - message_id
+            - user_id
+      examples:
         - summary: message_removed — сообщение удалено
           value:
             update_type: message_removed
@@ -2526,6 +3585,340 @@ components:
             message_id: mid_20260814_002
             chat_id: 123456789
             user_id: 1000000001
+
+    MessageCallbackUpdate:
+      type: object
+      description: Событие `message_callback` — пользователь нажал кнопку inline-клавиатуры.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [message_callback]
+              description: Тип события, однозначно задаёт подтип `Update`
+            callback:
+              allOf:
+                - $ref: "#/components/schemas/Callback"
+              description: Данные нажатой callback-кнопки
+            message:
+              anyOf:
+                - $ref: "#/components/schemas/Message"
+                - type: "null"
+              description: Изначальное сообщение с inline-клавиатурой. `null`, если оно удалено к моменту получения события
+            user_locale:
+              type: [string, "null"]
+              description: Текущий язык пользователя в формате IETF BCP 47 (например, `ru`)
+          required:
+            - callback
+      examples:
+        - summary: message_callback — пользователь нажал кнопку
+          value:
+            update_type: message_callback
+            timestamp: 1755000009000
+            callback:
+              timestamp: 1755000009000
+              callback_id: btn_order_1
+              payload: order:42
+              user:
+                user_id: 1000000001
+                first_name: Иван
+                is_bot: false
+            message:
+              sender:
+                user_id: 1000000001
+                first_name: Иван
+                is_bot: false
+              recipient:
+                chat_id: 123456789
+                chat_type: dialog
+              timestamp: 1754999400000
+              body:
+                mid: mid_20260814_001
+                seq: 0
+                text: Заказ пиццы
+            user_locale: ru
+
+    CommentCreatedUpdate:
+      type: object
+      description: Событие `comment_created` — создан комментарий к посту в канале.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [comment_created]
+              description: Тип события, однозначно задаёт подтип `Update`
+            message:
+              allOf:
+                - $ref: "#/components/schemas/CommentMessage"
+              description: Созданный или отредактированный комментарий
+          required:
+            - message
+      examples:
+        - summary: comment_created — создан комментарий к посту в канале
+          value:
+            update_type: comment_created
+            timestamp: 1755000016000
+            message:
+              sender:
+                user_id: 1000000003
+                first_name: Мария
+                is_bot: false
+              recipient:
+                chat_id: 987654321
+                chat_type: channel
+              timestamp: 1755000016000
+              body:
+                mid: mid_cmt_001
+                seq: 1
+                text: Отличная статья!
+              stat:
+                views: 12
+
+    CommentEditedUpdate:
+      type: object
+      description: Событие `comment_edited` — комментарий отредактирован.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [comment_edited]
+              description: Тип события, однозначно задаёт подтип `Update`
+            message:
+              allOf:
+                - $ref: "#/components/schemas/CommentMessage"
+              description: Созданный или отредактированный комментарий
+          required:
+            - message
+      examples:
+        - summary: comment_edited — комментарий отредактирован
+          value:
+            update_type: comment_edited
+            timestamp: 1755000017000
+            message:
+              sender:
+                user_id: 1000000003
+                first_name: Мария
+                is_bot: false
+              recipient:
+                chat_id: 987654321
+                chat_type: channel
+              timestamp: 1755000016000
+              body:
+                mid: mid_cmt_001
+                seq: 1
+                text: Отличная статья! (+1)
+
+    CommentRemovedUpdate:
+      type: object
+      description: Событие `comment_removed` — комментарий удалён.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [comment_removed]
+              description: Тип события, однозначно задаёт подтип `Update`
+            chat_id:
+              type: integer
+              format: int64
+              description: ID чата/диалога, в котором произошло событие
+            message_id:
+              type: string
+              description: ID удалённого комментария
+            user_id:
+              type: integer
+              format: int64
+              description: Пользователь, удаливший комментарий
+            post_id:
+              type: string
+              description: ID поста, к которому относится комментарий
+          required:
+            - chat_id
+            - message_id
+            - user_id
+            - post_id
+      examples:
+        - summary: comment_removed — комментарий удалён
+          value:
+            update_type: comment_removed
+            timestamp: 1755000018000
+            chat_id: 987654321
+            message_id: mid_cmt_001
+            post_id: mid_post_042
+            user_id: 1000000002
+
+    BotAddedToChatUpdate:
+      type: object
+      description: Событие `bot_added` — бот добавлен в чат/канал.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [bot_added]
+              description: Тип события, однозначно задаёт подтип `Update`
+            chat_id:
+              type: integer
+              format: int64
+              description: ID чата/диалога, в котором произошло событие
+            user:
+              allOf:
+                - $ref: "#/components/schemas/User"
+              description: Пользователь, связанный с событием
+            is_channel:
+              type: boolean
+              description: '`true`, если событие произошло в канале, а не в чате'
+          required:
+            - chat_id
+            - user
+            - is_channel
+      examples:
+        - summary: bot_added — бот добавлен в чат (пример из документации)
+          value:
+            update_type: bot_added
+            timestamp: 1755000000000
+            chat_id: 123456789
+            user:
+              user_id: 1000000001
+              first_name: Иван
+              last_name: Иванов
+              username: ivan
+              is_bot: false
+            is_channel: false
+
+    BotAdminPermissionsChangedUpdate:
+      type: object
+      description: Событие `bot_admin_permissions_changed` — изменились права администратора бота в чате/канале.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [bot_admin_permissions_changed]
+              description: Тип события, однозначно задаёт подтип `Update`
+            chat_id:
+              type: integer
+              format: int64
+              description: ID чата/диалога, в котором произошло событие
+            user_id:
+              type: integer
+              format: int64
+              description: Пользователь или бот, изменивший права администратора
+            bot_id:
+              type: integer
+              format: int64
+              description: ID бота, чьи права администратора изменились
+            is_channel:
+              type: boolean
+              description: '`true`, если событие произошло в канале, а не в чате'
+            is_admin:
+              type: boolean
+              description: '`true`, если бот является администратором чата/канала; `false`, если перестал им быть'
+            permissions:
+              type: [array, "null"]
+              uniqueItems: true
+              items:
+                $ref: "#/components/schemas/ChatAdminPermission"
+              description: |
+                Права администратора бота после изменения. `null`, если изменился только факт
+                администрирования, а не сам набор прав.
+          required:
+            - chat_id
+            - user_id
+            - bot_id
+            - is_channel
+            - is_admin
+      examples:
+        - summary: bot_admin_permissions_changed — изменились права администратора бота
+          value:
+            update_type: bot_admin_permissions_changed
+            timestamp: 1755000015000
+            chat_id: 123456789
+            user_id: 1000000002
+            bot_id: 1000000001
+            is_channel: false
+            is_admin: true
+            permissions:
+            - read_all_messages
+            - write
+
+    BotRemovedFromChatUpdate:
+      type: object
+      description: Событие `bot_removed` — бот удалён из чата/канала.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [bot_removed]
+              description: Тип события, однозначно задаёт подтип `Update`
+            chat_id:
+              type: integer
+              format: int64
+              description: ID чата/диалога, в котором произошло событие
+            user:
+              allOf:
+                - $ref: "#/components/schemas/User"
+              description: Пользователь, связанный с событием
+            is_channel:
+              type: boolean
+              description: '`true`, если событие произошло в канале, а не в чате'
+          required:
+            - chat_id
+            - user
+            - is_channel
+      examples:
+        - summary: bot_removed — бот удалён из чата/канала
+          value:
+            update_type: bot_removed
+            timestamp: 1755000003000
+            chat_id: 987654321
+            user:
+              user_id: 1000000002
+              first_name: Пётр
+              is_bot: false
+            is_channel: false
+
+    UserAddedToChatUpdate:
+      type: object
+      description: Событие `user_added` — новый пользователь вступил в чат/канал.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [user_added]
+              description: Тип события, однозначно задаёт подтип `Update`
+            chat_id:
+              type: integer
+              format: int64
+              description: ID чата/диалога, в котором произошло событие
+            user:
+              allOf:
+                - $ref: "#/components/schemas/User"
+              description: Пользователь, связанный с событием
+            inviter_id:
+              type: [integer, "null"]
+              format: int64
+              description: Пользователь, добавивший нового пользователя в чат. `null`, если пользователь присоединился по ссылке
+            is_channel:
+              type: boolean
+              description: '`true`, если событие произошло в канале, а не в чате'
+          required:
+            - chat_id
+            - user
+            - is_channel
+      examples:
         - summary: user_added — новый пользователь вступил в чат/канал
           value:
             update_type: user_added
@@ -2537,6 +3930,38 @@ components:
               is_bot: false
             inviter_id: 1000000002
             is_channel: false
+
+    UserRemovedFromChatUpdate:
+      type: object
+      description: Событие `user_removed` — пользователь удалён или покинул чат/канал.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [user_removed]
+              description: Тип события, однозначно задаёт подтип `Update`
+            chat_id:
+              type: integer
+              format: int64
+              description: ID чата/диалога, в котором произошло событие
+            user:
+              allOf:
+                - $ref: "#/components/schemas/User"
+              description: Пользователь, связанный с событием
+            admin_id:
+              type: [integer, "null"]
+              format: int64
+              description: Администратор, удаливший пользователя из чата. `null`, если пользователь покинул чат сам
+            is_channel:
+              type: boolean
+              description: '`true`, если событие произошло в канале, а не в чате'
+          required:
+            - chat_id
+            - user
+            - is_channel
+      examples:
         - summary: user_removed — пользователь удалён/покинул чат/канал
           value:
             update_type: user_removed
@@ -2549,6 +3974,307 @@ components:
             admin_id: 1000000002
             is_channel: false
 
+    BotStartedUpdate:
+      type: object
+      description: Событие `bot_started` — пользователь начал или возобновил разговор с ботом.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [bot_started]
+              description: Тип события, однозначно задаёт подтип `Update`
+            chat_id:
+              type: integer
+              format: int64
+              description: ID чата/диалога, в котором произошло событие
+            user:
+              allOf:
+                - $ref: "#/components/schemas/User"
+              description: Пользователь, связанный с событием
+            payload:
+              type: [string, "null"]
+              description: Дополнительные данные из диплинков, переданные при запуске бота (до 512 символов)
+            user_locale:
+              type: [string, "null"]
+              description: Текущий язык пользователя в формате IETF BCP 47 (например, `ru`)
+          required:
+            - chat_id
+            - user
+      examples:
+        - summary: bot_started — пользователь начал/возобновил разговор с ботом
+          value:
+            update_type: bot_started
+            timestamp: 1755000001000
+            chat_id: 123456789
+            user:
+              user_id: 1000000001
+              first_name: Иван
+              username: ivan
+              is_bot: false
+            payload: /start promo_2026
+            user_locale: ru
+
+    BotStoppedUpdate:
+      type: object
+      description: Событие `bot_stopped` — пользователь остановил или удалил бота.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [bot_stopped]
+              description: Тип события, однозначно задаёт подтип `Update`
+            chat_id:
+              type: integer
+              format: int64
+              description: ID чата/диалога, в котором произошло событие
+            user:
+              allOf:
+                - $ref: "#/components/schemas/User"
+              description: Пользователь, связанный с событием
+            user_locale:
+              type: [string, "null"]
+              description: Текущий язык пользователя в формате IETF BCP 47 (например, `ru`)
+          required:
+            - chat_id
+            - user
+      examples:
+        - summary: bot_stopped — пользователь остановил/удалил бота
+          value:
+            update_type: bot_stopped
+            timestamp: 1755000002000
+            chat_id: 123456789
+            user:
+              user_id: 1000000001
+              first_name: Иван
+              username: ivan
+              is_bot: false
+            user_locale: ru
+
+    ChatTitleChangedUpdate:
+      type: object
+      description: Событие `chat_title_changed` — название чата/канала изменено.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [chat_title_changed]
+              description: Тип события, однозначно задаёт подтип `Update`
+            chat_id:
+              type: integer
+              format: int64
+              description: ID чата/диалога, в котором произошло событие
+            user:
+              allOf:
+                - $ref: "#/components/schemas/User"
+              description: Пользователь, связанный с событием
+            title:
+              type: string
+              description: Новое название чата/канала
+          required:
+            - chat_id
+            - user
+            - title
+      examples:
+        - summary: chat_title_changed — изменено название чата/канала
+          value:
+            update_type: chat_title_changed
+            timestamp: 1755000004000
+            chat_id: 987654321
+            user:
+              user_id: 1000000002
+              first_name: Пётр
+              is_bot: false
+            title: Новая команда
+
+    DialogClearedUpdate:
+      type: object
+      description: Событие `dialog_cleared` — пользователь очистил историю диалога.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [dialog_cleared]
+              description: Тип события, однозначно задаёт подтип `Update`
+            chat_id:
+              type: integer
+              format: int64
+              description: ID чата/диалога, в котором произошло событие
+            user:
+              allOf:
+                - $ref: "#/components/schemas/User"
+              description: Пользователь, связанный с событием
+            user_locale:
+              type: [string, "null"]
+              description: Текущий язык пользователя в формате IETF BCP 47 (например, `ru`)
+          required:
+            - chat_id
+            - user
+      examples:
+        - summary: dialog_cleared — пользователь очистил историю диалога
+          value:
+            update_type: dialog_cleared
+            timestamp: 1755000005000
+            chat_id: 123456789
+            user:
+              user_id: 1000000001
+              first_name: Иван
+              is_bot: false
+            user_locale: ru
+
+    DialogMutedUpdate:
+      type: object
+      description: Событие `dialog_muted` — пользователь отключил уведомления диалога.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [dialog_muted]
+              description: Тип события, однозначно задаёт подтип `Update`
+            chat_id:
+              type: integer
+              format: int64
+              description: ID чата/диалога, в котором произошло событие
+            user:
+              allOf:
+                - $ref: "#/components/schemas/User"
+              description: Пользователь, связанный с событием
+            muted_until:
+              type: integer
+              format: int64
+              description: Время, до которого диалог был отключён (Unix timestamp в мс)
+            user_locale:
+              type: [string, "null"]
+              description: Текущий язык пользователя в формате IETF BCP 47 (например, `ru`)
+          required:
+            - chat_id
+            - user
+            - muted_until
+      examples:
+        - summary: dialog_muted — отключены уведомления диалога
+          value:
+            update_type: dialog_muted
+            timestamp: 1755000006000
+            chat_id: 123456789
+            user:
+              user_id: 1000000001
+              first_name: Иван
+              is_bot: false
+            muted_until: 1755086400000
+            user_locale: ru
+
+    DialogUnmutedUpdate:
+      type: object
+      description: Событие `dialog_unmuted` — пользователь включил уведомления диалога.
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [dialog_unmuted]
+              description: Тип события, однозначно задаёт подтип `Update`
+            chat_id:
+              type: integer
+              format: int64
+              description: ID чата/диалога, в котором произошло событие
+            user:
+              allOf:
+                - $ref: "#/components/schemas/User"
+              description: Пользователь, связанный с событием
+            user_locale:
+              type: [string, "null"]
+              description: Текущий язык пользователя в формате IETF BCP 47 (например, `ru`)
+          required:
+            - chat_id
+            - user
+      examples:
+        - summary: dialog_unmuted — включены уведомления диалога
+          value:
+            update_type: dialog_unmuted
+            timestamp: 1755000007000
+            chat_id: 123456789
+            user:
+              user_id: 1000000001
+              first_name: Иван
+              is_bot: false
+            user_locale: ru
+
+    DialogRemovedUpdate:
+      type: object
+      description: Событие `dialog_removed` — пользователь удалил диалог (также вызывается `bot_stopped`).
+      allOf:
+        - $ref: "#/components/schemas/UpdateBase"
+        - type: object
+          properties:
+            update_type:
+              type: string
+              enum: [dialog_removed]
+              description: Тип события, однозначно задаёт подтип `Update`
+            chat_id:
+              type: integer
+              format: int64
+              description: ID чата/диалога, в котором произошло событие
+            user:
+              allOf:
+                - $ref: "#/components/schemas/User"
+              description: Пользователь, связанный с событием
+            user_locale:
+              type: [string, "null"]
+              description: Текущий язык пользователя в формате IETF BCP 47 (например, `ru`)
+          required:
+            - chat_id
+            - user
+      examples:
+        - summary: dialog_removed — диалог удалён
+          value:
+            update_type: dialog_removed
+            timestamp: 1755000008000
+            chat_id: 123456789
+            user:
+              user_id: 1000000001
+              first_name: Иван
+              is_bot: false
+            user_locale: ru
+
+    Callback:
+      type: object
+      description: |
+        Данные нажатой callback-кнопки, по которым бот получает событие `message_callback`.
+
+        Обязательны `timestamp`, `callback_id` и `user` — официальная `schema.yaml`, схема
+        `Callback` (проверено 2026-09-27). Исходное сообщение с клавиатурой вложением **не**
+        является: в официальной модели оно лежит рядом, в `MessageCallbackUpdate.message`
+        (может быть `null`, если сообщение удалили к моменту получения события).
+      properties:
+        timestamp:
+          type: integer
+          format: int64
+          description: Момент нажатия кнопки (Unix timestamp в мс)
+        callback_id:
+          type: string
+          description: Идентификатор callback-кнопки
+        payload:
+          type: [string, "null"]
+          description: Payload кнопки
+        user:
+          allOf:
+            - $ref: "#/components/schemas/User"
+          description: Пользователь, нажавший кнопку
+      required:
+        - timestamp
+        - callback_id
+        - user
+
     SuccessResponse:
       type: object
       description: Стандартный ответ об успехе/ошибке
@@ -2557,8 +4283,7 @@ components:
           type: boolean
           description: '`true`, если операция выполнена успешно'
         message:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Описание ошибки (при неуспехе)
 
     ErrorResponse:
@@ -2572,6 +4297,8 @@ components:
           type: string
           description: Описание ошибки
         error:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Дополнительная информация об ошибке
+      required:
+        - code
+        - message

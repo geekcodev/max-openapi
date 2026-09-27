@@ -11,6 +11,9 @@
 **Лимиты запросов:** 30 RPS на `platform-api2.max.ru`. Максимум 2 сообщения/редактирования/удаления/ответа в секунду на
 диалог/чат/канал.
 
+**Последнее обновление:** 2026-09-27 (сверка с `dev.max.ru/docs-api/changelog-api` и официальной машинной спекой
+`github.com/max-messenger/api-schema` v0.0.33)
+
 ---
 
 ## Содержание
@@ -19,58 +22,79 @@
 
 1. [GET /me](#1-get-me) — Информация о боте
 2. [PATCH /me/commands](#2-patch-mecommands) — Редактирование команд бота
-3. [GET /chats](#3-get-chats) — Список чатов (УСТАРЕЛО с июня 2026)
-4. [GET /chats/{chatId}](#4-get-chatschatid) — Информация о чате
-5. [PATCH /chats/{chatId}](#5-patch-chatschatid) — Редактирование чата
-6. [POST /chats/{chatId}/actions](#6-post-chatschatidactions) — Отправка действия бота
-7. [GET /chats/{chatId}/pin](#7-get-chatschatidpin) — Получить закреплённое сообщение
-8. [PUT /chats/{chatId}/pin](#8-put-chatschatidpin) — Закрепить сообщение
-9. [DELETE /chats/{chatId}/pin](#9-delete-chatschatidpin) — Открепить сообщение
-10. [GET /chats/{chatId}/members/me](#10-get-chatschatidmembersme) — Участие бота в чате
-11. [DELETE /chats/{chatId}/members/me](#11-delete-chatschatidmembersme) — Удалить бота из чата
-12. [GET /chats/{chatId}/members/admins](#12-get-chatschatidmembersadmins) — Список администраторов
-13. [POST /chats/{chatId}/members/admins](#13-post-chatschatidmembersadmins) — Назначить администратора
-14. [DELETE /chats/{chatId}/members/admins/{userId}](#14-delete-chatschatidmembersadminsid) — Снять администратора
-15. [GET /chats/{chatId}/members](#15-get-chatschatidmembers) — Список участников
-16. [POST /chats/{chatId}/members](#16-post-chatschatidmembers) — Добавить участников
-17. [DELETE /chats/{chatId}/members](#17-delete-chatschatidmembers) — Удалить участника
-18. [GET /subscriptions](#18-get-subscriptions) — Список webhook-подписок
-19. [POST /subscriptions](#19-post-subscriptions) — Создать webhook-подписку
-20. [DELETE /subscriptions](#20-delete-subscriptions) — Удалить webhook-подписку
-21. [GET /updates](#21-get-updates) — Long polling
-22. [POST /uploads](#22-post-uploads) — Загрузка медиафайлов
-23. [GET /messages](#23-get-messages) — Получить сообщения
-24. [POST /messages](#24-post-messages) — Отправить сообщение
-25. [PUT /messages](#25-put-messages) — Редактировать сообщение
-26. [DELETE /messages](#26-delete-messages) — Удалить сообщение
-27. [GET /messages/{messageId}](#27-get-messagesmessageid) — Получить сообщение по ID
-28. [GET /videos/{videoToken}](#28-get-videosvideotoken) — Информация о видео
-29. [POST /answers](#29-post-answers) — Ответ на callback
+3. [GET /chats/{chatId}](#3-get-chatschatid) — Информация о чате
+4. [PATCH /chats/{chatId}](#4-patch-chatschatid) — Редактирование чата
+5. [POST /chats/{chatId}/actions](#5-post-chatschatidactions) — Отправка действия бота
+6. [GET /chats/{chatId}/pin](#6-get-chatschatidpin) — Получить закреплённое сообщение
+7. [PUT /chats/{chatId}/pin](#7-put-chatschatidpin) — Закрепить сообщение
+8. [DELETE /chats/{chatId}/pin](#8-delete-chatschatidpin) — Открепить сообщение
+9. [GET /chats/{chatId}/members/me](#9-get-chatschatidmembersme) — Участие бота в чате
+10. [DELETE /chats/{chatId}/members/me](#10-delete-chatschatidmembersme) — Удалить бота из чата
+11. [GET /chats/{chatId}/members/admins](#11-get-chatschatidmembersadmins) — Список администраторов
+12. [POST /chats/{chatId}/members/admins](#12-post-chatschatidmembersadmins) — Назначить администратора
+13. [DELETE /chats/{chatId}/members/admins/{userId}](#13-delete-chatschatidmembersadminsuserid) — Снять администратора
+14. [GET /chats/{chatId}/members](#14-get-chatschatidmembers) — Список участников
+15. [DELETE /chats/{chatId}/members](#15-delete-chatschatidmembers) — Удалить участника
+16. [GET /subscriptions](#16-get-subscriptions) — Список webhook-подписок
+17. [POST /subscriptions](#17-post-subscriptions) — Создать webhook-подписку
+18. [DELETE /subscriptions](#18-delete-subscriptions) — Удалить webhook-подписку
+19. [GET /updates](#19-get-updates) — Long polling
+20. [POST /uploads](#20-post-uploads) — Загрузка медиафайлов
+21. [GET /messages](#21-get-messages) — Получить сообщения
+22. [POST /messages](#22-post-messages) — Отправить сообщение
+23. [PUT /messages](#23-put-messages) — Редактировать сообщение
+24. [DELETE /messages](#24-delete-messages) — Удалить сообщение
+25. [GET /messages/{messageId}](#25-get-messagesmessageid) — Получить сообщение по ID
+26. [GET /videos/{videoToken}](#26-get-videosvideotoken) — Информация о видео
+27. [POST /answers](#27-post-answers) — Ответ на callback
+
+### Комментарии (добавлены в августе 2026)
+
+28. [GET /messages/{messageId}/comments](#28-get-messagesmessageidcomments) — Получить комментарии к посту
+29. [POST /messages/{messageId}/comments](#29-post-messagesmessageidcomments) — Отправить комментарий
+30. [PUT /messages/{messageId}/comments](#30-put-messagesmessageidcomments) — Редактировать комментарий
+31. [DELETE /messages/{messageId}/comments](#31-delete-messagesmessageidcomments) — Удалить комментарий
+32. [GET /messages/{messageId}/comments/{commentId}](#32-get-messagesmessageidcommentscommentid) — Получить комментарий
+    по ID
+
+### Удалённые методы
+
+| Метод | Путь                      | Статус                                                                                                                                                                                                                                                                                                                                                                    |
+|-------|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| GET   | `/chats`                  | **Удалён в июне 2026** — «Удалено» в [`changelog-api`](https://dev.max.ru/docs-api/changelog-api) (раздел Chats, июнь 2026), путь убран из официальной `schema.yaml` v0.0.33. Готовой замены нет: собирайте `chat_id` из событий `bot_added`/`bot_started` и храните у себя                                                                                               |
+| POST  | `/chats/{chatId}/members` | **Удаляется 30 сентября 2026** — [страница метода](https://dev.max.ru/docs-api/methods/POST/chats/-chatId-/members): «с 9 сентября 2026 работа метода будет ограничена, а с 30 сентября 2026 он будет удалён». Готовой замены нет: «API MAX не предоставляет готовой возможности для добавления участников в групповой чат». Удалён из спеки 2026-09-27, за 3 дня до даты |
 
 ### Объекты
 
-30. [User](#объект-user)
-31. [UserWithPhoto](#объект-userwithphoto)
-32. [BotInfo](#объект-botinfo)
-33. [ChatMember](#объект-chatmember)
-34. [Chat](#объект-chat)
-35. [Message](#объект-message)
-36. [NewMessageBody](#объект-newmessagebody)
-37. [Update](#объект-update)
+33. [User](#объект-user)
+34. [UserWithPhoto](#объект-userwithphoto)
+35. [BotInfo](#объект-botinfo)
+36. [ChatMember](#объект-chatmember)
+37. [Chat](#объект-chat)
+38. [Recipient](#объект-recipient)
+39. [Message](#объект-message)
+40. [MessageBody](#объект-messagebody)
+41. [LinkedMessage](#объект-linkedmessage)
+42. [NewMessageLink](#объект-newmessagelink)
+43. [NewMessageBody](#объект-newmessagebody)
+44. [CommentMessage](#объект-commentmessage)
+45. [NewCommentBody](#объект-newcommentbody)
+46. [Update](#объект-update)
+47. [MarkupElement](#объект-markupelement)
 
 ### Справочные разделы
 
-38. [HTTP-коды ошибок](#http-коды-ошибок)
-39. [Клавиатура для чат-ботов](#клавиатура-для-чат-ботов)
-40. [Типы кнопок](#типы-кнопок)
-41. [Кнопка request_contact](#кнопка-request_contact)
-42. [Кнопка clipboard](#кнопка-clipboard)
-43. [Форматирование текста](#форматирование-текста)
-44. [Типы вложений](#типы-вложений)
-45. [Правила комбинирования вложений](#правила-комбинирования-вложений)
-46. [Загрузка медиафайлов](#загрузка-медиафайлов)
-47. [Схема inline-клавиатуры](#схема-inline-клавиатуры)
-48. [Схемы вложений](#схемы-вложений)
+48. [HTTP-коды ошибок](#http-коды-ошибок)
+49. [Клавиатура для чат-ботов](#клавиатура-для-чат-ботов)
+50. [Типы кнопок](#типы-кнопок)
+51. [Кнопка request_contact](#кнопка-request_contact)
+52. [Кнопка clipboard](#кнопка-clipboard)
+53. [Форматирование текста](#форматирование-текста)
+54. [Типы вложений](#типы-вложений)
+55. [Правила комбинирования вложений](#правила-комбинирования-вложений)
+56. [Загрузка медиафайлов](#загрузка-медиафайлов)
+57. [Схема inline-клавиатуры](#схема-inline-клавиатуры)
+58. [Схемы вложений](#схемы-вложений)
 
 ---
 
@@ -112,6 +136,16 @@
 |------------|-----------------------|--------------|--------------|
 | `commands` | BotCommand[] optional | Нет          | До 32 команд |
 
+**Объект BotCommand:**
+
+| Поле          | Тип                | Обязательное | Описание                       |
+|---------------|--------------------|--------------|--------------------------------|
+| `name`        | string 1–64        | **Да**       | Имя команды без `/`            |
+| `description` | string 1–128 Null. | Нет          | Описание команды (опционально) |
+
+> Обязателен только `name` — подтверждено `schema.yaml`, схема `BotCommand` (проверено 2026-09-27). Раньше спека
+> требовала оба поля.
+
 **Ответ:**
 
 | Поле       | Тип                   | Описание     |
@@ -120,20 +154,7 @@
 
 ---
 
-## 3. GET /chats
-
-**Список всех групповых чатов и каналов бота.** ⚠️ **УСТАРЕЛО с июня 2026** — метод больше не поддерживается.
-Используйте `POST /subscriptions`, чтобы подписаться на события `bot_added`/`bot_started` и хранить chat_id
-самостоятельно.
-
-**Аутентификация:** `access_token` (apiKey)
-
-**Примечание:** Long Polling нельзя использовать для получения списка чатов. Вы должны собирать chat_id из
-webhook-событий и вести собственное хранилище.
-
----
-
-## 4. GET /chats/{chatId}
+## 3. GET /chats/{chatId}
 
 **Информация о чате или канале.**
 
@@ -167,9 +188,10 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 5. PATCH /chats/{chatId}
+## 4. PATCH /chats/{chatId}
 
-**Редактирование информации о чате/канале** (название, иконка, закреплённое сообщение). Бот должен быть администратором.
+**Редактирование информации о чате/канале** (название, описание, иконка, закреплённое сообщение). Бот должен быть
+администратором.
 
 **Аутентификация:** `access_token` (apiKey)
 
@@ -181,18 +203,19 @@ webhook-событий и вести собственное хранилище.
 
 **Тело запроса:**
 
-| Поле     | Тип                                                    | Обязательное | Описание                                                              |
-|----------|--------------------------------------------------------|--------------|-----------------------------------------------------------------------|
-| `icon`   | object PhotoAttachmentRequestPayload Nullable optional | Нет          | Запрос прикрепления изображения (поля взаимоисключающие)              |
-| `title`  | string Nullable optional                               | Нет          | 1–200 символов                                                        |
-| `pin`    | string Nullable optional                               | Нет          | ID сообщения для закрепления (для открепления используйте DELETE pin) |
-| `notify` | boolean Nullable optional                              | Нет          | По умолчанию: `true`. Системное уведомление об изменении              |
+| Поле          | Тип                                                    | Обязательное | Описание                                                                        |
+|---------------|--------------------------------------------------------|--------------|---------------------------------------------------------------------------------|
+| `icon`        | object PhotoAttachmentRequestPayload Nullable optional | Нет          | Запрос прикрепления изображения (поля взаимоисключающие)                        |
+| `title`       | string Nullable optional                               | Нет          | 1–200 символов                                                                  |
+| `description` | string Nullable optional                               | Нет          | До 16000 символов. Пустая строка снимает описание. **Добавлено в августе 2026** |
+| `pin`         | string Nullable optional                               | Нет          | ID сообщения для закрепления (для открепления используйте DELETE pin)           |
+| `notify`      | boolean Nullable optional                              | Нет          | По умолчанию: `true`. Системное уведомление об изменении                        |
 
 **Ответ:** (объект Chat — как в GET /chats/{chatId})
 
 ---
 
-## 6. POST /chats/{chatId}/actions
+## 5. POST /chats/{chatId}/actions
 
 **Отправка действия бота** (печать, отправка фото/видео/аудио/файла).
 
@@ -219,7 +242,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 7. GET /chats/{chatId}/pin
+## 6. GET /chats/{chatId}/pin
 
 **Получить закреплённое сообщение в чате/канале.** Бот должен быть администратором.
 
@@ -239,7 +262,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 8. PUT /chats/{chatId}/pin
+## 7. PUT /chats/{chatId}/pin
 
 **Закрепить сообщение в чате/канале.** Бот должен быть администратором.
 
@@ -267,7 +290,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 9. DELETE /chats/{chatId}/pin
+## 8. DELETE /chats/{chatId}/pin
 
 **Открепить сообщение в чате/канале.** Бот должен быть администратором.
 
@@ -288,7 +311,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 10. GET /chats/{chatId}/members/me
+## 9. GET /chats/{chatId}/members/me
 
 **Информация об участии бота** в чате/канале, включая доступные права администратора. Бот определяется по access_token.
 
@@ -323,7 +346,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 11. DELETE /chats/{chatId}/members/me
+## 10. DELETE /chats/{chatId}/members/me
 
 **Удалить бота из чата/канала.**
 
@@ -344,7 +367,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 12. GET /chats/{chatId}/members/admins
+## 11. GET /chats/{chatId}/members/admins
 
 **Список всех администраторов** чата/канала (пользователей и ботов) с их данными. Бот должен быть администратором.
 
@@ -365,7 +388,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 13. POST /chats/{chatId}/members/admins
+## 12. POST /chats/{chatId}/members/admins
 
 **Назначить администратора (ов).** Выдаёт права администратора пользователям/ботам, которые являются участниками чата
 или подписчиками канала. Бот должен быть администратором с правом `add_admins`.
@@ -402,7 +425,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 14. DELETE /chats/{chatId}/members/admins/{userId}
+## 13. DELETE /chats/{chatId}/members/admins/{userId}
 
 **Снять права администратора** с пользователя/бота. Они остаются в чате. Бот должен быть администратором с правом
 `add_admins`.
@@ -425,7 +448,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 15. GET /chats/{chatId}/members
+## 14. GET /chats/{chatId}/members
 
 **Список участников** чата/канала. Бот должен быть администратором.
 
@@ -454,37 +477,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 16. POST /chats/{chatId}/members
-
-**Добавить участников в групповой чат.** Бот должен быть администратором с правом `add_remove_members`. Нельзя добавлять
-подписчиков в каналы.
-
-**Аутентификация:** `access_token` (apiKey)
-
-**Параметры пути:**
-
-| Параметр | Тип                                   | Описание           |
-|----------|---------------------------------------|--------------------|
-| `chatId` | integer `<int64>` (pattern: `\-?\d+`) | ID группового чата |
-
-**Тело запроса:**
-
-| Поле       | Тип       | Обязательное | Описание                |
-|------------|-----------|--------------|-------------------------|
-| `user_ids` | integer[] | Да           | До 100 ID пользователей |
-
-**Ответ:**
-
-| Поле                  | Тип                                   | Описание                                      |
-|-----------------------|---------------------------------------|-----------------------------------------------|
-| `success`             | boolean                               | `true` при успехе                             |
-| `message`             | string optional                       | Пояснение ошибки при неудаче                  |
-| `failed_user_ids`     | integer[] Nullable optional           | ID пользователей, которых не удалось добавить |
-| `failed_user_details` | FailedUserDetails[] Nullable optional | Подробные причины ошибок                      |
-
----
-
-## 17. DELETE /chats/{chatId}/members
+## 15. DELETE /chats/{chatId}/members
 
 **Удалить участника** из чата/канала. Бот должен быть администратором с правом `add_remove_members`.
 
@@ -512,7 +505,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 18. GET /subscriptions
+## 16. GET /subscriptions
 
 **Список всех webhook-подписок.**
 
@@ -524,6 +517,17 @@ webhook-событий и вести собственное хранилище.
 |-----------------|----------------|------------------|
 | `subscriptions` | Subscription[] | Текущие подписки |
 
+**Объект Subscription:**
+
+| Поле           | Тип                        | Обязательное | Описание                                       |
+|----------------|----------------------------|--------------|------------------------------------------------|
+| `url`          | string                     | **Да**       | URL webhook                                    |
+| `time`         | integer `<int64>`          | **Да**       | Unix-время создания подписки (в миллисекундах) |
+| `update_types` | string[] Nullable optional | Нет          | Типы обновлений, на которые подписан бот       |
+
+> Поля `url` и `time` обязательны, `update_types` опционален — подтверждено `schema.yaml`, схема `Subscription`
+> (проверено 2026-09-27). Раньше спека объявляла `type` и `state`: в официальной схеме таких полей нет.
+
 **Примечания:**
 
 - HTTP webhook'и больше не поддерживаются (с 25 мая). Используйте HTTPS с сертификатами от доверенного CA (включая
@@ -532,7 +536,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 19. POST /subscriptions
+## 17. POST /subscriptions
 
 **Создание webhook-подписки** (основной механизм доставки событий для production). Long Polling отключается, когда
 подписка активна.
@@ -572,7 +576,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 20. DELETE /subscriptions
+## 18. DELETE /subscriptions
 
 **Отписка от webhook.** После вызова бот перестаёт получать webhook-уведомления; Long Polling становится доступным.
 
@@ -593,7 +597,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 21. GET /updates
+## 19. GET /updates
 
 **Long Polling** для получения событий. Только для разработки/тестирования — не подходит для production.
 
@@ -617,7 +621,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 22. POST /uploads
+## 20. POST /uploads
 
 **Загрузка медиафайлов.** Возвращает URL для загрузки и токен для прикрепления к сообщениям.
 
@@ -665,7 +669,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 23. GET /messages
+## 21. GET /messages
 
 **Получить сообщения** из чата или по ID сообщений.
 
@@ -677,8 +681,10 @@ webhook-событий и вести собственное хранилище.
 |---------------|----------------------------|--------------|------------------------------------------------------------------------------------------------------------------------------------|
 | `chat_id`     | integer `<int64>` optional | Условное     | ID чата для получения сообщений (обязателен, если не задан `message_ids`). Возвращает сообщения в обратном порядке (сначала новые) |
 | `message_ids` | object optional            | Условное     | ID сообщений через запятую (обязателен, если не задан `chat_id`)                                                                   |
-| `from`        | integer `<int64>` optional | Нет          | Unix-время — сообщения до этого момента                                                                                            |
-| `to`          | integer `<int64>` optional | Нет          | Unix-время — сообщения с этого момента                                                                                             |
+| `from`        | integer `<int64>` optional | Нет          | Unix-время — сообщения с этого момента. Сервер рекомендует `after`                                                                 |
+| `to`          | integer `<int64>` optional | Нет          | Unix-время — сообщения до этого момента. Сервер рекомендует `before`                                                               |
+| `after`       | integer `<int64>` optional | Нет          | Сообщения после указанного timestamp (Unix, мс). Предпочтительнее `from`                                                           |
+| `before`      | integer `<int64>` optional | Нет          | Сообщения перед указанным timestamp (Unix, мс). Предпочтительнее `to`                                                              |
 | `count`       | integer [1-100] optional   | Нет          | По умолчанию: 50. Максимум сообщений для возврата                                                                                  |
 
 **Ответ:**
@@ -689,7 +695,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 24. POST /messages
+## 22. POST /messages
 
 **Отправка сообщения** в диалог, групповой чат или канал.
 
@@ -699,11 +705,11 @@ webhook-событий и вести собственное хранилище.
 
 **Query-параметры:**
 
-| Параметр               | Тип                        | Обязательное | Описание                                              |
-|------------------------|----------------------------|--------------|-------------------------------------------------------|
-| `user_id`              | integer `<int64>` optional | Условное     | ID пользователя для сообщений в диалог                |
-| `chat_id`              | integer `<int64>` optional | Условное     | ID чата для сообщений в групповой чат/канал           |
-| `disable_link_preview` | boolean optional           | Нет          | Если `true`, отключает генерацию предпросмотра ссылок |
+| Параметр               | Тип                        | Обязательное | Описание                                                                    |
+|------------------------|----------------------------|--------------|-----------------------------------------------------------------------------|
+| `user_id`              | integer `<int64>` optional | Условное     | ID пользователя для сообщений в диалог                                      |
+| `chat_id`              | integer `<int64>` optional | Условное     | ID чата для сообщений в групповой чат/канал                                 |
+| `disable_link_preview` | boolean optional           | Нет          | По умолчанию `false`. Если `true`, отключает генерацию предпросмотра ссылок |
 
 **Тело запроса:** (NewMessageBody)
 
@@ -723,7 +729,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 25. PUT /messages
+## 23. PUT /messages
 
 **Редактирование сообщения**, отправленного ботом.
 
@@ -761,7 +767,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 26. DELETE /messages
+## 24. DELETE /messages
 
 **Удаление сообщения** из диалога, группового чата или канала.
 
@@ -791,7 +797,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 27. GET /messages/{messageId}
+## 25. GET /messages/{messageId}
 
 **Получить одно сообщение** по его ID.
 
@@ -817,7 +823,7 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
-## 28. GET /videos/{videoToken}
+## 26. GET /videos/{videoToken}
 
 **Информация о видео** — URL для воспроизведения и метаданные.
 
@@ -831,18 +837,21 @@ webhook-событий и вести собственное хранилище.
 
 **Ответ:**
 
-| Поле        | Тип                                             | Описание                                                   |
-|-------------|-------------------------------------------------|------------------------------------------------------------|
-| `token`     | string                                          | Токен видео-вложения                                       |
-| `urls`      | object VideoUrls Nullable optional              | URL для скачивания/воспроизведения (null, если недоступны) |
-| `thumbnail` | object PhotoAttachmentPayload Nullable optional | Миниатюра видео                                            |
-| `width`     | integer                                         | Ширина видео                                               |
-| `height`    | integer                                         | Высота видео                                               |
-| `duration`  | integer                                         | Продолжительность в секундах                               |
+| Поле        | Тип                                             | Обязательное | Описание                                                   |
+|-------------|-------------------------------------------------|--------------|------------------------------------------------------------|
+| `token`     | string                                          | **Да**       | Токен видео-вложения                                       |
+| `urls`      | object VideoUrls Nullable optional              | Нет          | URL для скачивания/воспроизведения (null, если недоступны) |
+| `thumbnail` | object PhotoAttachmentPayload Nullable optional | Нет          | Миниатюра видео                                            |
+| `width`     | integer                                         | **Да**       | Ширина видео                                               |
+| `height`    | integer                                         | **Да**       | Высота видео                                               |
+| `duration`  | integer                                         | **Да**       | Продолжительность в секундах                               |
+
+> Схема `VideoInfo` в спеке соответствует официальной `VideoAttachmentDetails` (проверено 2026-09-27): обязательны
+> `token`, `width`, `height`, `duration`. Поля `urls` и `thumbnail` остаются опциональными.
 
 ---
 
-## 29. POST /answers
+## 27. POST /answers
 
 **Ответ на callback** (нажатие кнопки). Может обновить текущее сообщение и/или отправить одноразовое уведомление.
 
@@ -871,6 +880,116 @@ webhook-событий и вести собственное хранилище.
 
 ---
 
+## Комментарии к постам в каналах
+
+> Группа методов добавлена в **августе 2026** (`https://dev.max.ru/docs-api/changelog-api`, раздел Comments).
+> Комментарии существуют только для постов в каналах. В отличие от сообщений, **вложения не поддерживаются**,
+> а у комментария нет публичного `url`.
+
+Получатель комментария задаётся в `Recipient` полями `chat_type: channel` и `post_id` (`mid` поста).
+
+### 28. GET /messages/{messageId}/comments
+
+**Получить комментарии** к посту.
+
+**Аутентификация:** `access_token` (apiKey)
+
+**Параметры пути:**
+
+| Параметр    | Тип    | Описание                        |
+|-------------|--------|---------------------------------|
+| `messageId` | string | `mid` комментируемого сообщения |
+
+**Query-параметры:**
+
+| Параметр      | Тип                    | Обязательное | Описание                               |
+|---------------|------------------------|--------------|----------------------------------------|
+| `comment_ids` | string optional        | Нет          | Список ID комментариев через запятую   |
+| `after`       | integer `<int64>` opt. | Нет          | Комментарии после timestamp (Unix, мс) |
+| `before`      | integer `<int64>` opt. | Нет          | Комментарии перед timestamp (Unix, мс) |
+| `count`       | integer `<int32>` opt. | Нет          | По умолчанию: 50                       |
+
+**Ответ:** `{ "messages": CommentMessage[] }`
+
+### 29. POST /messages/{messageId}/comments
+
+**Отправить комментарий** к посту.
+
+**Аутентификация:** `access_token` (apiKey)
+
+**Параметры пути:** `messageId` (string, `mid` комментируемого сообщения)
+
+**Query-параметры:**
+
+| Параметр               | Тип              | Обязательное | Описание                                                                           |
+|------------------------|------------------|--------------|------------------------------------------------------------------------------------|
+| `disable_link_preview` | boolean optional | Нет          | По умолчанию `false`. `true` — отключает генерацию медиапревью для ссылок в тексте |
+
+> **Расхождение официальной доки:** в описании `disable_link_preview` в `schema.yaml` написано «If `false`, server
+> will not generate media preview», что противоречит `default: false` и имени параметра. Спека придерживается
+> `true` = превью выключено, см. `AGENTS.md` § 5.
+
+**Тело запроса:** (NewCommentBody)
+
+| Поле     | Тип                              | Обязательное | Описание                                           |
+|----------|----------------------------------|--------------|----------------------------------------------------|
+| `text`   | string Nullable (4000)           | Нет          | Текст комментария                                  |
+| `format` | TextFormat Nullable opt.         | Нет          | `markdown` или `html` — форматирование текста      |
+| `link`   | object NewMessageLink Null. opt. | Нет          | Ссылка на сообщение/комментарий (ответ, пересылка) |
+
+**Ответ:** `{ "message": CommentMessage }`
+
+### 30. PUT /messages/{messageId}/comments
+
+**Редактировать комментарий.** Вложения не поддерживаются.
+
+**Аутентификация:** `access_token` (apiKey)
+
+**Параметры пути:** `messageId` (string, `mid` комментируемого сообщения)
+
+**Query-параметры:**
+
+| Параметр     | Тип    | Обязательное | Описание                                 |
+|--------------|--------|--------------|------------------------------------------|
+| `comment_id` | string | Да           | Идентификатор редактируемого комментария |
+
+**Тело запроса:** (NewCommentBody)
+
+**Ответ:** `{ "success": boolean, "message": string }`
+
+### 31. DELETE /messages/{messageId}/comments
+
+**Удалить комментарий.**
+
+**Аутентификация:** `access_token` (apiKey)
+
+**Параметры пути:** `messageId` (string, `mid` комментируемого сообщения)
+
+**Query-параметры:**
+
+| Параметр     | Тип    | Обязательное | Описание                             |
+|--------------|--------|--------------|--------------------------------------|
+| `comment_id` | string | Да           | Идентификатор удаляемого комментария |
+
+**Ответ:** `{ "success": boolean, "message": string }`
+
+### 32. GET /messages/{messageId}/comments/{commentId}
+
+**Получить комментарий** по его ID.
+
+**Аутентификация:** `access_token` (apiKey)
+
+**Параметры пути:**
+
+| Параметр    | Тип    | Описание                        |
+|-------------|--------|---------------------------------|
+| `messageId` | string | `mid` комментируемого сообщения |
+| `commentId` | string | `mid` комментария               |
+
+**Ответ:** (CommentMessage)
+
+---
+
 ## Объекты
 
 ---
@@ -882,15 +1001,19 @@ ChatMember.
 
 **Поля:**
 
-| Поле                 | Тип                      | Описание                                                                                             |
-|----------------------|--------------------------|------------------------------------------------------------------------------------------------------|
-| `user_id`            | integer `<int64>`        | ID пользователя/бота                                                                                 |
-| `first_name`         | string                   | Отображаемое имя                                                                                     |
-| `last_name`          | string Nullable optional | Фамилия (не для ботов)                                                                               |
-| `username`           | string Nullable          | Имя пользователя (может быть null, если недоступно)                                                  |
-| `is_bot`             | boolean                  | `true`, если бот                                                                                     |
-| `last_activity_time` | integer `<int64>`        | Время последней активности (Unix, мс; может отсутствовать, если пользователь скрывает онлайн-статус) |
-| `name`               | string Nullable          | **Устарело**                                                                                         |
+| Поле                 | Тип                      | Обязательное | Описание                                                                                             |
+|----------------------|--------------------------|--------------|------------------------------------------------------------------------------------------------------|
+| `user_id`            | integer `<int64>`        | **Да**       | ID пользователя/бота                                                                                 |
+| `first_name`         | string                   | **Да**       | Отображаемое имя                                                                                     |
+| `last_name`          | string Nullable optional | Нет          | Фамилия (не для ботов)                                                                               |
+| `username`           | string Nullable          | Нет          | Имя пользователя (может быть null, если недоступно)                                                  |
+| `is_bot`             | boolean                  | **Да**       | `true`, если бот                                                                                     |
+| `last_activity_time` | integer `<int64>`        | Нет          | Время последней активности (Unix, мс; может отсутствовать, если пользователь скрывает онлайн-статус) |
+| `name`               | string Nullable          | Нет          | **Устарело** — задокументировано на странице объекта, но **отсутствует в официальной `schema.yaml`** |
+
+> Обязательные поля (`user_id`, `first_name`, `is_bot`) подтверждены официальной `schema.yaml`, схема `User`
+> (проверено 2026-09-27). Поле `name` оставлено сознательно: оно описано как deprecated на
+> `https://dev.max.ru/docs-api/objects/User`, расхождение доки зафиксировано в `AGENTS.md` § 5.
 
 ---
 
@@ -949,37 +1072,46 @@ ChatMember.
 
 **Поля:**
 
-| Поле                 | Тип                                    | Описание                                                      |
-|----------------------|----------------------------------------|---------------------------------------------------------------|
-| `chat_id`            | integer `<int64>`                      | ID чата/канала                                                |
-| `type`               | enum `ChatType`                        | `"chat"`, `"channel"`, `"dialog"`                             |
-| `status`             | enum `ChatStatus`                      | `"active"`, `"removed"`, `"left"`, `"closed"`                 |
-| `title`              | string Nullable                        | Название чата (null для диалогов)                             |
-| `icon`               | object Image Nullable                  | Иконка чата                                                   |
-| `last_event_time`    | integer `<int64>`                      | Время последнего события                                      |
-| `participants_count` | integer `<int32>`                      | Количество участников (2 для диалогов)                        |
-| `owner_id`           | integer `<int64>` Nullable optional    | ID владельца                                                  |
-| `participants`       | object Nullable optional               | Участники с временем активности (null при перечислении чатов) |
-| `is_public`          | boolean                                | Публичный (для диалогов всегда false)                         |
-| `link`               | string Nullable optional               | Ссылка на чат                                                 |
-| `description`        | string Nullable                        | Описание                                                      |
-| `dialog_with_user`   | object UserWithPhoto Nullable optional | Собеседник в диалоге (только для типа dialog)                 |
-| `messages_count`     | integer Nullable optional              | Количество сообщений                                          |
-| `pinned_message`     | object Message Nullable optional       | Закреплённое сообщение (только при запросе конкретного чата)  |
+| Поле                 | Тип                                    | Обязательное | Описание                                                      |
+|----------------------|----------------------------------------|--------------|---------------------------------------------------------------|
+| `chat_id`            | integer `<int64>`                      | **Да**       | ID чата/канала                                                |
+| `type`               | enum `ChatType`                        | **Да**       | `"chat"`, `"channel"`, `"dialog"`                             |
+| `status`             | enum `ChatStatus`                      | **Да**       | `"active"`, `"removed"`, `"left"`, `"closed"`                 |
+| `title`              | string Nullable                        | Нет          | Название чата (null для диалогов)                             |
+| `icon`               | object Image Nullable                  | Нет          | Иконка чата                                                   |
+| `last_event_time`    | integer `<int64>`                      | **Да**       | Время последнего события                                      |
+| `participants_count` | integer `<int32>`                      | **Да**       | Количество участников (2 для диалогов)                        |
+| `owner_id`           | integer `<int64>` Nullable optional    | Нет          | ID владельца                                                  |
+| `participants`       | object Nullable optional               | Нет          | Участники с временем активности (null при перечислении чатов) |
+| `is_public`          | boolean                                | **Да**       | Публичный (для диалогов всегда false)                         |
+| `link`               | string Nullable optional               | Нет          | Ссылка на чат                                                 |
+| `description`        | string Nullable                        | Нет          | Описание                                                      |
+| `dialog_with_user`   | object UserWithPhoto Nullable optional | Нет          | Собеседник в диалоге (только для типа dialog)                 |
+| `messages_count`     | integer Nullable optional              | Нет          | Количество сообщений                                          |
+| `pinned_message`     | object Message Nullable optional       | Нет          | Закреплённое сообщение (только при запросе конкретного чата)  |
+
+> Обязательные поля подтверждены официальной `schema.yaml`, схема `Chat` (проверено 2026-09-27). `Chat` также
+> возвращается в `GET /chats/{chatId}` и во вложениях событий; сам метод `GET /chats` удалён — см. раздел
+> «Удалённые методы». Вложенный объект `Image` (используется как `icon`) имеет единственное обязательное поле
+> `url` — `schema.yaml`, схема `Image`.
 
 ---
 
 ### Объект Recipient
 
-Получатель сообщения (пользователь или чат).
+Получатель сообщения: пользователь, чат или канал.
+
+> Набор значений `chat_type` подтверждён `schema.yaml`, схема `ChatType` (проверено 2026-09-27):
+> `dialog`, `chat`, `channel`. Раньше спека объявляла `chat_type` как nullable строку «уточнить по API».
 
 **Поля:**
 
-| Поле        | Тип               | Описание                                                 |
-|-------------|-------------------|----------------------------------------------------------|
-| `chat_id`   | integer `<int64>` | ID чата (если сообщение отправлено в чат)                |
-| `chat_type` | string Nullable   | Тип чата (например, `"dialog"`); набор значений уточнить |
-| `user_id`   | integer `<int64>` | ID пользователя (если сообщение отправлено в диалог)     |
+| Поле        | Тип                          | Обязательное | Описание                                                               |
+|-------------|------------------------------|--------------|------------------------------------------------------------------------|
+| `chat_type` | enum `ChatType`              | **Да**       | `dialog` \| `chat` \| `channel`                                        |
+| `chat_id`   | integer `<int64>` Null. opt. | Нет          | ID чата или канала                                                     |
+| `user_id`   | integer `<int64>` Null. opt. | Нет          | ID пользователя (если сообщение отправлено в диалог)                   |
+| `post_id`   | string Nullable optional     | Нет          | ID поста — `mid` комментируемого сообщения в канале (для комментариев) |
 
 ---
 
@@ -989,15 +1121,41 @@ ChatMember.
 
 **Поля:**
 
-| Поле        | Тип                                    | Описание                                                                         |
-|-------------|----------------------------------------|----------------------------------------------------------------------------------|
-| `sender`    | object User optional                   | Пользователь, отправивший сообщение                                              |
-| `recipient` | object Recipient                       | Получатель (пользователь или чат)                                                |
-| `timestamp` | integer `<int64>`                      | Время создания (Unix, мс)                                                        |
-| `link`      | object LinkedMessage Nullable optional | Пересланное или цитируемое сообщение                                             |
-| `body`      | object MessageBody                     | Содержимое сообщения (текст + вложения). Null, если только пересланное сообщение |
-| `stat`      | object MessageStat Nullable optional   | Статистика (только посты в каналах)                                              |
-| `url`       | string Nullable optional               | Публичный URL поста в канале (не для диалогов/групп)                             |
+| Поле        | Тип                                    | Обязательное | Описание                                                                         |
+|-------------|----------------------------------------|--------------|----------------------------------------------------------------------------------|
+| `sender`    | object User optional                   | Нет          | Пользователь, отправивший сообщение                                              |
+| `recipient` | object Recipient                       | **Да**       | Получатель (пользователь или чат)                                                |
+| `timestamp` | integer `<int64>`                      | **Да**       | Время создания (Unix, мс)                                                        |
+| `link`      | object LinkedMessage Nullable optional | Нет          | Пересланное или цитируемое сообщение                                             |
+| `body`      | object MessageBody Nullable            | **Да**       | Содержимое сообщения (текст + вложения). Null, если только пересланное сообщение |
+| `stat`      | object MessageStat Nullable optional   | Нет          | Статистика (только посты в каналах)                                              |
+| `url`       | string Nullable optional               | Нет          | Публичный URL поста в канале (не для диалогов/групп)                             |
+
+> Обязательные поля подтверждены официальной `schema.yaml`, схема `Message` (проверено 2026-09-27). Обязательность
+> `body` там задана **без** `nullable`, при этом текстовая дока допускает `body: null` для сообщений, которые
+> состоят только из пересланного содержимого. Спека оставляет `body` обязательным, но nullable — расхождение доки
+> зафиксировано в `AGENTS.md` § 5. Поле `MessageStat.views` тоже обязательно.
+
+---
+
+### Объект MessageBody
+
+Содержимое сообщения. Поля `mid` и `seq` обязательны.
+
+| Поле          | Тип                        | Обязательное | Описание                                                                 |
+|---------------|----------------------------|--------------|--------------------------------------------------------------------------|
+| `mid`         | string                     | **Да**       | Уникальный идентификатор сообщения                                       |
+| `seq`         | integer `<int64>`          | **Да**       | Порядковый номер (sequence) сообщения в чате                             |
+| `text`        | string Nullable            | Нет          | Текст сообщения (макс. 4000 символов)                                    |
+| `markup`      | MarkupElement[] Null. opt. | Нет          | Разобранная разметка текста — см. [MarkupElement](#объект-markupelement) |
+| `attachments` | Attachment[] Null. opt.    | Нет          | Вложения                                                                 |
+
+> Состав подтверждён 2026-09-27: в официальной `schema.yaml` (`MessageBody`) только эти пять полей, а страница
+> `Message` описывает `body` как «Содержимое сообщения. Текст + вложения». Поля `caption` и `format`
+> **удалены** 2026-09-27: `format` документирован только как параметр **запроса** (`NewMessageBody`,
+> `NewCommentBody`), а `caption` не встречается ни в одной из 133 официальных схем. `AGENTS.md` § 5.1 п. 7.
+
+`CommentMessageBody` — как `MessageBody`, но **без** `attachments`.
 
 ---
 
@@ -1017,52 +1175,170 @@ ChatMember.
 
 ---
 
+### Объект LinkedMessage
+
+Пересланное или ответное сообщение. Возвращается в `Message.link`.
+
+> Состав полей подтверждён официальной машинной спецификацией
+> `github.com/max-messenger/api-schema` → `schema.yaml` (v0.0.33, проверено 2026-09-27).
+> **Исправление:** раньше спека объявляла `sender` числовым ID и содержала поля `mid`/`chat`;
+> фактически `sender` — объект `User`, а `mid` и текст находятся внутри `message`, а `chat` → `chat_id`.
+
+**Поля:**
+
+| Поле      | Тип                                 | Обязательное | Описание                                                         |
+|-----------|-------------------------------------|--------------|------------------------------------------------------------------|
+| `type`    | enum `forward` \| `reply`           | **Да**       | Тип связанного сообщения                                         |
+| `message` | object MessageBody                  | **Да**       | Содержимое связанного сообщения (включает его `mid`)             |
+| `sender`  | object User Nullable optional       | Нет          | Отправитель. `null`, если сообщение опубликовано от имени канала |
+| `chat_id` | integer `<int64>` Nullable optional | Нет          | ID чата, в котором сообщение было отправлено изначально          |
+
+---
+
+### Объект NewMessageLink
+
+Ссылка на сообщение в чате или пост в канале — для ответа или пересылки. Используется в `NewMessageBody.link` и
+`NewCommentBody.link`.
+
+> Подтверждено `schema.yaml`, схема `NewMessageLink` (проверено 2026-09-27). **Исправление:** `type` и `mid`
+> обязательны; поля `chat` в исходящей форме **нет**. В ответе API приходит расширенная форма `LinkedMessage`.
+
+**Поля:**
+
+| Поле   | Тип                       | Обязательное | Описание                  |
+|--------|---------------------------|--------------|---------------------------|
+| `type` | enum `forward` \| `reply` | **Да**       | Тип ссылки                |
+| `mid`  | string (minLength 1)      | **Да**       | `mid` исходного сообщения |
+
+---
+
+### Объект CommentMessage
+
+Комментарий в канале. В отличие от `Message`, **нет** публичного `url`, а в `body` **нет** вложений.
+
+**Поля:**
+
+| Поле        | Тип                                    | Обязательное | Описание                                        |
+|-------------|----------------------------------------|--------------|-------------------------------------------------|
+| `sender`    | object User Nullable optional          | Нет          | Автор комментария. `null`, если от имени канала |
+| `recipient` | object Recipient                       | **Да**       | Получатель — для комментариев только канал      |
+| `timestamp` | integer `<int64>`                      | **Да**       | Время создания (Unix, мс)                       |
+| `link`      | object CommentLinkedMessage Null. opt. | Нет          | Пересланный или отвеченный комментарий          |
+| `body`      | object CommentMessageBody              | **Да**       | Содержимое комментария (только текст)           |
+| `stat`      | object MessageStat Nullable optional   | Нет          | Статистика комментария                          |
+
+`CommentMessageBody` — как `MessageBody`, но без `attachments`; поля `mid` и `seq` обязательны, есть
+`text` и `markup`.
+
+`CommentLinkedMessage` — как `LinkedMessage`, но поле `message` имеет тип `CommentMessageBody`.
+
+---
+
+### Объект NewCommentBody
+
+Тело нового комментария (POST/PUT `/messages/{messageId}/comments`). В отличие от `NewMessageBody`, вложения **не
+поддерживаются**.
+
+**Поля:**
+
+| Поле     | Тип                              | Обязательное | Описание                                           |
+|----------|----------------------------------|--------------|----------------------------------------------------|
+| `text`   | string Nullable (max 4000)       | Нет          | Текст комментария                                  |
+| `format` | enum TextFormat Nullable opt.    | Нет          | `"markdown"` или `"html"` — форматирование         |
+| `link`   | object NewMessageLink Null. opt. | Нет          | Ссылка на сообщение/комментарий (ответ, пересылка) |
+
+---
+
+### Объект MarkupElement
+
+Разобранная разметка текста, которую API возвращает в `MessageBody.markup` и `CommentMessageBody.markup`. Поле `text`
+содержит «чистый» текст, `markup` — позиции и типы элементов внутри него.
+
+**Поля базового типа:**
+
+| Поле     | Тип               | Обязательное | Описание                                 |
+|----------|-------------------|--------------|------------------------------------------|
+| `type`   | string            | **Да**       | Тип элемента (см. таблицу ниже)          |
+| `from`   | integer `<int32>` | **Да**       | Индекс начала элемента в тексте (с нуля) |
+| `length` | integer `<int32>` | **Да**       | Длина элемента в символах                |
+
+**Типы элементов и соответствующий синтаксис** (полная таблица — в разделе
+[Форматирование текста](#форматирование-текста)):
+
+| `type`          | markdown               | html                              | Доп. поля                          |
+|-----------------|------------------------|-----------------------------------|------------------------------------|
+| `strong`        | `**текст**`            | `<b>` / `<strong>`                | —                                  |
+| `emphasized`    | `*текст*`              | `<i>` / `<em>`                    | —                                  |
+| `underline`     | `++текст++`            | `<ins>` / `<u>`                   | —                                  |
+| `strikethrough` | `~~текст~~`            | `<del>` / `<s>`                   | —                                  |
+| `monospaced`    | `` `текст` ``          | `<pre>` / `<code>`                | —                                  |
+| `highlighted`   | `^^текст^^`            | `<mark>`                          | —                                  |
+| `link`          | `[текст](url)`         | `<a href="url">текст</a>`         | `url` (max 2048) — **обязательно** |
+| `quote`         | `> текст`              | `<blockquote>`                    | —                                  |
+| `heading`       | `# текст`              | `<h1>`..`<h4>`                    | —                                  |
+| `user_mention`  | `[Имя](max://user/id)` | `<a href="max://user/id">Имя</a>` | `user_id` или `user_link`          |
+
+---
+
 ### Объект Update
 
 Описывает события в чатах/каналах. Доставляется через Webhook (POST /subscriptions) или Long Polling (GET /updates).
 
 **Типы событий:**
 
-| Тип события          | Описание                                                             |
-|----------------------|----------------------------------------------------------------------|
-| `bot_added`          | Бот добавлен в чат/канал                                             |
-| `bot_started`        | Пользователь начал/возобновил диалог с ботом                         |
-| `bot_stopped`        | Пользователь остановил/удалил бота (с `dialog_removed` при удалении) |
-| `bot_removed`        | Бот удалён из чата/канала                                            |
-| `chat_title_changed` | Изменено название чата/канала                                        |
-| `dialog_cleared`     | Пользователь очистил историю диалога                                 |
-| `dialog_muted`       | Пользователь отключил уведомления диалога                            |
-| `dialog_unmuted`     | Пользователь включил уведомления диалога                             |
-| `dialog_removed`     | Пользователь удалил диалог (также вызывает `bot_stopped`)            |
-| `message_callback`   | Пользователь нажал кнопку                                            |
-| `message_created`    | Новое сообщение или пост в канале                                    |
-| `message_edited`     | Сообщение отредактировано                                            |
-| `message_removed`    | Сообщение удалено                                                    |
-| `user_added`         | Новый пользователь вступил в чат/канал                               |
-| `user_removed`       | Пользователь удалён из/покинул чат/канал                             |
+| Тип события                     | Описание                                                             |
+|---------------------------------|----------------------------------------------------------------------|
+| `bot_added`                     | Бот добавлен в чат/канал                                             |
+| `bot_started`                   | Пользователь начал/возобновил диалог с ботом                         |
+| `bot_stopped`                   | Пользователь остановил/удалил бота (с `dialog_removed` при удалении) |
+| `bot_removed`                   | Бот удалён из чата/канала                                            |
+| `chat_title_changed`            | Изменено название чата/канала                                        |
+| `dialog_cleared`                | Пользователь очистил историю диалога                                 |
+| `dialog_muted`                  | Пользователь отключил уведомления диалога                            |
+| `dialog_unmuted`                | Пользователь включил уведомления диалога                             |
+| `dialog_removed`                | Пользователь удалил диалог (также вызывает `bot_stopped`)            |
+| `message_callback`              | Пользователь нажал кнопку                                            |
+| `message_created`               | Новое сообщение или пост в канале                                    |
+| `message_edited`                | Сообщение отредактировано                                            |
+| `message_removed`               | Сообщение удалено                                                    |
+| `user_added`                    | Новый пользователь вступил в чат/канал                               |
+| `user_removed`                  | Пользователь удалён из/покинул чат/канал                             |
+| `comment_created`               | Создан комментарий к посту в канале                                  |
+| `comment_edited`                | Комментарий отредактирован                                           |
+| `comment_removed`               | Комментарий удалён                                                   |
+| `bot_admin_permissions_changed` | Изменились права администратора бота                                 |
 
-**Набор полей зависит от `update_type`.** Все поля необязательные — API отдаёт только поля, относящиеся к конкретному
-типу события.
+> Три события комментариев бот получает, **только если он администратор канала** с правом `read_all_messages`.
+>
+> Событие `bot_admin_permissions_changed` на страницах текстовой документации не расписано — оно добавлено
+> по официальной `schema.yaml` (схема `BotAdminPermissionsChangedUpdate`, проверено 2026-09-27).
+
+**Набор полей зависит от `update_type`.** Обязательны только `update_type` и `timestamp`; остальные поля
+необязательные — API отдаёт только поля, относящиеся к конкретному типу события.
 
 **Поля по типам событий:**
 
-| Тип события          | Поля                                                         |
-|----------------------|--------------------------------------------------------------|
-| `bot_added`          | `timestamp`, `chat_id`, `user`, `is_channel`                 |
-| `bot_started`        | `timestamp`, `chat_id`, `user`, `payload`, `user_locale`     |
-| `bot_stopped`        | `timestamp`, `chat_id`, `user`, `user_locale`                |
-| `bot_removed`        | `timestamp`, `chat_id`, `user`, `is_channel`                 |
-| `chat_title_changed` | `timestamp`, `chat_id`, `user`, `title`                      |
-| `dialog_cleared`     | `timestamp`, `chat_id`, `user`, `user_locale`                |
-| `dialog_muted`       | `timestamp`, `chat_id`, `user`, `muted_until`, `user_locale` |
-| `dialog_unmuted`     | `timestamp`, `chat_id`, `user`, `user_locale`                |
-| `dialog_removed`     | `timestamp`, `chat_id`, `user`, `user_locale`                |
-| `message_callback`   | `timestamp`, `callback`, `user_locale`                       |
-| `message_created`    | `timestamp`, `message`, `user_locale`                        |
-| `message_edited`     | `timestamp`, `message`                                       |
-| `message_removed`    | `timestamp`, `message_id`, `chat_id`, `user_id`              |
-| `user_added`         | `timestamp`, `chat_id`, `user`, `inviter_id`, `is_channel`   |
-| `user_removed`       | `timestamp`, `chat_id`, `user`, `admin_id`, `is_channel`     |
+| Тип события                     | Поля                                                                                 |
+|---------------------------------|--------------------------------------------------------------------------------------|
+| `bot_added`                     | `timestamp`, `chat_id`, `user`, `is_channel`                                         |
+| `bot_started`                   | `timestamp`, `chat_id`, `user`, `payload`, `user_locale`                             |
+| `bot_stopped`                   | `timestamp`, `chat_id`, `user`, `user_locale`                                        |
+| `bot_removed`                   | `timestamp`, `chat_id`, `user`, `is_channel`                                         |
+| `chat_title_changed`            | `timestamp`, `chat_id`, `user`, `title`                                              |
+| `dialog_cleared`                | `timestamp`, `chat_id`, `user`, `user_locale`                                        |
+| `dialog_muted`                  | `timestamp`, `chat_id`, `user`, `muted_until`, `user_locale`                         |
+| `dialog_unmuted`                | `timestamp`, `chat_id`, `user`, `user_locale`                                        |
+| `dialog_removed`                | `timestamp`, `chat_id`, `user`, `user_locale`                                        |
+| `message_callback`              | `timestamp`, `callback`, `message` (может быть `null`), `user_locale`                |
+| `message_created`               | `timestamp`, `message`, `user_locale`                                                |
+| `message_edited`                | `timestamp`, `message`                                                               |
+| `message_removed`               | `timestamp`, `message_id`, `chat_id`, `user_id`                                      |
+| `user_added`                    | `timestamp`, `chat_id`, `user`, `inviter_id`, `is_channel`                           |
+| `user_removed`                  | `timestamp`, `chat_id`, `user`, `admin_id`, `is_channel`                             |
+| `comment_created`               | `timestamp`, `message`                                                               |
+| `comment_edited`                | `timestamp`, `message`                                                               |
+| `comment_removed`               | `timestamp`, `message_id`, `chat_id`, `user_id`, `post_id`                           |
+| `bot_admin_permissions_changed` | `timestamp`, `chat_id`, `user_id`, `bot_id`, `is_channel`, `is_admin`, `permissions` |
 
 **Описание полей:**
 
@@ -1078,11 +1354,12 @@ ChatMember.
 | `title`       | string                     | Новое название чата (для `chat_title_changed`)                                                                                                                                                                                         |
 | `muted_until` | integer `<int64>`          | Время, до которого диалог был отключён (Unix, мс; для `dialog_muted`)                                                                                                                                                                  |
 | `message`     | object Message Nullable    | Сообщение (для `message_created`, `message_edited`)                                                                                                                                                                                    |
-| `message_id`  | string                     | ID удалённого сообщения (для `message_removed`)                                                                                                                                                                                        |
+| `message_id`  | string                     | ID удалённого сообщения (для `message_removed`, `comment_removed`)                                                                                                                                                                     |
+| `post_id`     | string Nullable            | ID поста, к которому относится комментарий (для `comment_removed`). В остальных событиях — источник `message.recipient.post_id`                                                                                                        |
 | `user_id`     | integer `<int64>`          | Пользователь, удаливший сообщение (для `message_removed`)                                                                                                                                                                              |
 | `inviter_id`  | integer `<int64>` Nullable | Пользователь, добавивший нового пользователя в чат. Может быть null, если присоединение по ссылке (для `user_added`)                                                                                                                   |
 | `admin_id`    | integer `<int64>` Nullable | Администратор, удаливший пользователя из чата. Может быть null, если пользователь покинул чат сам (для `user_removed`)                                                                                                                 |
-| `callback`    | object Callback            | Данные callback-кнопки: `callback_id`, `payload`, `message` (Message Nullable — может быть null, если удалено). Для `message_callback`                                                                                                 |
+| `callback`    | object Callback            | Данные нажатой callback-кнопки: `timestamp`, `callback_id`, `payload` (Nullable), `user`. Исходное сообщение лежит **рядом**, в `message` события (Nullable). Только для `message_callback`                                            |
 
 **Примеры событий:**
 
@@ -1226,23 +1503,30 @@ ChatMember.
   "update_type": "message_callback",
   "timestamp": 1755000009000,
   "callback": {
+    "timestamp": 1755000009000,
     "callback_id": "btn_order_1",
     "payload": "order:42",
-    "message": {
-      "sender": {
-        "user_id": 1000000001,
-        "first_name": "Иван",
-        "is_bot": false
-      },
-      "recipient": {
-        "chat_id": 123456789,
-        "chat_type": "dialog"
-      },
-      "timestamp": 1754999400000,
-      "body": {
-        "mid": "mid_20260814_001",
-        "text": "Заказ пиццы"
-      }
+    "user": {
+      "user_id": 1000000001,
+      "first_name": "Иван",
+      "is_bot": false
+    }
+  },
+  "message": {
+    "sender": {
+      "user_id": 1000000001,
+      "first_name": "Иван",
+      "is_bot": false
+    },
+    "recipient": {
+      "chat_id": 123456789,
+      "chat_type": "dialog"
+    },
+    "timestamp": 1754999400000,
+    "body": {
+      "mid": "mid_20260814_001",
+      "seq": 0,
+      "text": "Заказ пиццы"
     }
   },
   "user_locale": "ru"
@@ -1266,6 +1550,7 @@ ChatMember.
     "timestamp": 1755000010000,
     "body": {
       "mid": "mid_20260814_002",
+      "seq": 0,
       "text": "Привет!"
     }
   },
@@ -1290,6 +1575,7 @@ ChatMember.
     "timestamp": 1755000010000,
     "body": {
       "mid": "mid_20260814_002",
+      "seq": 0,
       "text": "Привет! (исправлено)"
     }
   }
@@ -1335,6 +1621,89 @@ ChatMember.
   "is_channel": false
 }
 ```
+
+```json
+{
+  "update_type": "comment_created",
+  "timestamp": 1755000016000,
+  "message": {
+    "sender": {
+      "user_id": 1000000003,
+      "first_name": "Мария",
+      "is_bot": false
+    },
+    "recipient": {
+      "chat_id": 987654321,
+      "chat_type": "channel"
+    },
+    "timestamp": 1755000016000,
+    "body": {
+      "mid": "mid_cmt_001",
+      "seq": 1,
+      "text": "Отличная статья!"
+    },
+    "stat": {
+      "views": 12
+    }
+  }
+}
+```
+
+```json
+{
+  "update_type": "comment_edited",
+  "timestamp": 1755000017000,
+  "message": {
+    "sender": {
+      "user_id": 1000000003,
+      "first_name": "Мария",
+      "is_bot": false
+    },
+    "recipient": {
+      "chat_id": 987654321,
+      "chat_type": "channel"
+    },
+    "timestamp": 1755000016000,
+    "body": {
+      "mid": "mid_cmt_001",
+      "seq": 1,
+      "text": "Отличная статья! (+1)"
+    }
+  }
+}
+```
+
+```json
+{
+  "update_type": "comment_removed",
+  "timestamp": 1755000018000,
+  "chat_id": 987654321,
+  "message_id": "mid_cmt_001",
+  "post_id": "mid_post_042",
+  "user_id": 1000000002
+}
+```
+
+```json
+{
+  "update_type": "bot_admin_permissions_changed",
+  "timestamp": 1755000019000,
+  "chat_id": 123456789,
+  "user_id": 1000000002,
+  "bot_id": 1000000001,
+  "is_channel": false,
+  "is_admin": true,
+  "permissions": [
+    "read_all_messages",
+    "write"
+  ]
+}
+```
+
+> Событие `bot_admin_permissions_changed` **не расписано на страницах текстовой документации** — оно
+> добавлено по официальной машинной схеме `https://github.com/max-messenger/api-schema` → `schema.yaml`,
+> схема `BotAdminPermissionsChangedUpdate` (проверено 2026-09-27). Поля `permissions` — массив
+> [`ChatAdminPermission`](#объект-chatmember); `null` означает, что администратор снял все права.
 
 ---
 
@@ -1540,6 +1909,7 @@ MAX пользователя. Это делает контакт пригодн�
 | `audio`           | Аудио — MP3, WAV, M4A и другие; максимум 256 МБ или 60 минут (оба лимита обязательны)                                                    |
 | `file`            | Прочие файлы — максимум 4 ГБ; TXT, DOC, PDF и другие распространённые форматы                                                            |
 | `sticker`         | Стикеры                                                                                                                                  |
+| `contact`         | Контакты — vCard или зарегистрированный пользователь МАКС                                                                                |
 | `inline_keyboard` | Кнопки клавиатуры — максимум 210 кнопок в 30 рядах, до 7 в ряду (до 3 для `link`, `open_app`, `request_geo_location`, `request_contact`) |
 | `location`        | Геолокация                                                                                                                               |
 | `share`           | Медиафайлы с предпросмотром                                                                                                              |
@@ -1726,58 +2096,197 @@ MAX пользователя. Это делает контакт пригодн�
 
 ## Схемы вложений
 
-### ImageAttachmentPayload
+Вложения делятся на два набора, которые различаются направлением:
 
-| Поле    | Тип    | Описание         |
-|---------|--------|------------------|
-| `url`   | string | URL изображения  |
-| `token` | string | Токен медиафайла |
+| Набор               | Где встречается                                                    | Схема      |
+|---------------------|--------------------------------------------------------------------|------------|
+| `Attachment`        | входящие: `GET /updates`, объекты `Message` и `CommentMessage`     | 9 подтипов |
+| `AttachmentRequest` | исходящие: `POST /messages`, `PUT /messages`, комментарии к постам | 9 подтипов |
 
-Форматы: JPG, JPEG, PNG, GIF, TIFF, BMP, HEIC. Максимум 50 МБ или 7680×7680 px.
+Оба набора — `oneOf` с `discriminator` по полю `type`. Подтип ответа задаёт значение `type`
+через `enum` из одного элемента, поэтому валидатор отбрасывает несовпадения без разбора `oneOf`.
 
-### VideoAttachmentPayload
+У всех подтипов, кроме `location`, форма одинаковая: `type` + обязательный `payload`. У `location` **payload нет** —
+координаты лежат на верхнем уровне объекта (официальная
+`schema.yaml`, схемы `LocationAttachment` / `LocationAttachmentRequest`, проверено 2026-09-27):
 
-| Поле       | Тип              | Описание                           |
-|------------|------------------|------------------------------------|
-| `url`      | object VideoUrls | URL для скачивания/воспроизведения |
-| `token`    | string           | Токен медиафайла                   |
-| `duration` | integer Nullable | Продолжительность в секундах       |
+```json
+{
+  "type": "location",
+  "latitude": 55.751244,
+  "longitude": 37.618423
+}
+```
 
-### AudioAttachmentPayload
+| `type`            | Подтип ответа              | `payload` ответа                  | Подтип запроса                    | `payload` запроса                 |
+|-------------------|----------------------------|-----------------------------------|-----------------------------------|-----------------------------------|
+| `image`           | `PhotoAttachment`          | `PhotoAttachmentPayload`          | `PhotoAttachmentRequest`          | `PhotoAttachmentRequestPayload`   |
+| `video`           | `VideoAttachment`          | `VideoAttachmentPayload`          | `VideoAttachmentRequest`          | `UploadedInfo`                    |
+| `audio`           | `AudioAttachment`          | `AudioAttachmentPayload`          | `AudioAttachmentRequest`          | `UploadedInfo`                    |
+| `file`            | `FileAttachment`           | `FileAttachmentPayload`           | `FileAttachmentRequest`           | `UploadedInfo`                    |
+| `sticker`         | `StickerAttachment`        | `StickerAttachmentPayload`        | `StickerAttachmentRequest`        | `StickerAttachmentRequestPayload` |
+| `contact`         | `ContactAttachment`        | `ContactAttachmentPayload`        | `ContactAttachmentRequest`        | `ContactAttachmentRequestPayload` |
+| `inline_keyboard` | `InlineKeyboardAttachment` | `InlineKeyboardAttachmentPayload` | `InlineKeyboardAttachmentRequest` | `InlineKeyboardAttachmentPayload` |
+| `share`           | `ShareAttachment`          | `ShareAttachmentPayload`          | `ShareAttachmentRequest`          | `ShareAttachmentPayload`          |
+| `location`        | `LocationAttachment`       | — (координаты наверху)            | `LocationAttachmentRequest`       | — (координаты наверху)            |
 
-| Поле       | Тип              | Описание                     |
-|------------|------------------|------------------------------|
-| `url`      | string           | URL аудио                    |
-| `token`    | string           | Токен медиафайла             |
-| `duration` | integer Nullable | Продолжительность в секундах |
+### Payload входящих вложений
 
-### FileAttachmentPayload
+#### PhotoAttachmentPayload
 
-| Поле        | Тип     | Описание              |
-|-------------|---------|-----------------------|
-| `url`       | string  | URL файла             |
-| `token`     | string  | Токен медиафайла      |
-| `file_size` | integer | Размер файла в байтах |
+| Поле       | Тип               | Обязательное | Описание                                       |
+|------------|-------------------|--------------|------------------------------------------------|
+| `photo_id` | integer `<int64>` | **Да**       | Идентификатор изображения (из `POST /uploads`) |
+| `token`    | string            | **Да**       | Токен изображения                              |
+| `url`      | string            | **Да**       | URL изображения                                |
 
-### ContactAttachmentPayload
+> Габаритов `width`/`height` здесь нет: официальная схема объявляет их для видео и стикера, но сознательно
+> не для фото, и страницы доков их не упоминают. Удалены 2026-09-27 (`AGENTS.md` § 5.1 п. 7).
 
-| Поле        | Тип             | Описание                                                                                                |
-|-------------|-----------------|---------------------------------------------------------------------------------------------------------|
-| `vcf_info`  | string Nullable | Контактная информация в формате vCard. Преобразуйте `\r\n` в реальные переносы строк перед хэшированием |
-| `vcf_phone` | string Nullable | Номер телефона контакта                                                                                 |
-| `max_info`  | object Nullable | Дополнительная информация о пользователе                                                                |
-| `hash`      | string          | `HMAC-SHA256(access_token, vcf_info)` — проверяет, что номер телефона совпадает с учётной записью MAX   |
+Используется также как `thumbnail` в `VideoInfo` — официальный `VideoAttachmentDetails.thumbnail` ссылается именно на
+`PhotoAttachmentPayload` (в отличие от `VideoAttachment.thumbnail`, где тип — `VideoThumbnail`).
 
-### LocationAttachmentPayload
+Форматы изображения: JPG, JPEG, PNG, GIF, TIFF, BMP, HEIC. Максимум 50 МБ или 7680×7680 px.
 
-| Поле        | Тип               | Описание |
-|-------------|-------------------|----------|
-| `latitude`  | number `<double>` | Широта   |
-| `longitude` | number `<double>` | Долгота  |
+#### VideoAttachmentPayload
+
+| Поле        | Тип                              | Обязательное | Описание                                                   |
+|-------------|----------------------------------|--------------|------------------------------------------------------------|
+| `url`       | object `VideoUrls`               | **Да**       | URL для скачивания/воспроизведения (см. `AGENTS.md` § 2.1) |
+| `token`     | string                           | **Да**       | Токен медиафайла                                           |
+| `duration`  | integer Nullable                 | Нет          | Продолжительность в секундах                               |
+| `width`     | integer Nullable                 | Нет          | Ширина в пикселях                                          |
+| `height`    | integer Nullable                 | Нет          | Высота в пикселях                                          |
+| `thumbnail` | object `VideoThumbnail` Nullable | Нет          | Обложка (`url` обязателен внутри)                          |
+
+> `width`/`height`/`thumbnail` официально объявлены на верхнем уровне `VideoAttachment`, у нас — внутри
+> `payload`; набор полей и обязательность совпадают (`AGENTS.md` § 2.1).
+
+#### AudioAttachmentPayload
+
+| Поле            | Тип              | Обязательное | Описание                     |
+|-----------------|------------------|--------------|------------------------------|
+| `url`           | string           | **Да**       | URL аудио                    |
+| `token`         | string           | **Да**       | Токен медиафайла             |
+| `duration`      | integer Nullable | Нет          | Продолжительность в секундах |
+| `transcription` | string Nullable  | Нет          | Расшифровка аудио            |
+
+#### FileAttachmentPayload
+
+| Поле       | Тип               | Обязательное | Описание                                                                        |
+|------------|-------------------|--------------|---------------------------------------------------------------------------------|
+| `url`      | string `<uri>`    | **Да**       | URL файла                                                                       |
+| `token`    | string            | **Да**       | Токен файла — используйте, чтобы переиспользовать один файл в других сообщениях |
+| `filename` | string            | **Да**       | Имя файла                                                                       |
+| `size`     | integer `<int64>` | **Да**       | Размер в байтах                                                                 |
+
+> `filename` и `size` официально объявлены на верхнем уровне `FileAttachment`, у нас — внутри `payload`
+> (`AGENTS.md` § 2.1). Поле `file_size` удалено 2026-09-27: официальный размер — `size` в байтах.
+
+#### StickerAttachmentPayload
+
+| Поле     | Тип              | Обязательное | Описание          |
+|----------|------------------|--------------|-------------------|
+| `url`    | string `<uri>`   | **Да**       | URL стикера       |
+| `token`  | string           | **Да**       | Токен вложения    |
+| `code`   | string           | **Да**       | Код стикера       |
+| `width`  | integer Nullable | **Да**       | Ширина в пикселях |
+| `height` | integer Nullable | **Да**       | Высота в пикселей |
+
+> `code` и `url` (из `AttachmentPayload`) объявлены официально; `width`/`height` официально требуются в
+> `StickerAttachment`, у нас — внутри `payload` (`AGENTS.md` § 2.1). Утверждение прежней версии спеки о том,
+> что payload пуст, было неверным — закрыто 2026-09-27 (`AGENTS.md` § 5.1 п. 9).
+
+#### ContactAttachmentPayload
+
+| Поле       | Тип                  | Обязательное | Описание                                                                                                |
+|------------|----------------------|--------------|---------------------------------------------------------------------------------------------------------|
+| `vcf_info` | string Nullable      | Нет          | Контактная информация в формате vCard. Преобразуйте `\r\n` в реальные переносы строк перед хэшированием |
+| `max_info` | object User Nullable | Нет          | Информация о пользователе в МАКС                                                                        |
+| `hash`     | string Nullable      | Нет          | `HMAC-SHA256(access_token, vcf_info)` — проверяет, что номер телефона совпадает с учётной записью MAX   |
+
+> Состав подтверждён официальной `schema.yaml` (проверено 2026-09-27). На странице «стикеры и контакты»
+> пример **отправки** контакта показывает поля `name` и `contact_id` — они есть в request-варианте
+> (`ContactAttachmentRequestPayload`), но не в payload входящего вложения.
+
+#### ShareAttachmentPayload
+
+| Поле          | Тип             | Обязательное | Описание                              |
+|---------------|-----------------|--------------|---------------------------------------|
+| `url`         | string Nullable | **Да**       | Ссылка, приходящая превью в сообщении |
+| `token`       | string Nullable | **Да**       | Токен вложения                        |
+| `title`       | string Nullable | Нет          | Заголовок превью                      |
+| `description` | string Nullable | Нет          | Описание превью                       |
+| `image_url`   | string Nullable | Нет          | URL картинки превью                   |
+
+> `title`/`description`/`image_url` официально объявлены на верхнем уровне `ShareAttachment`, у нас — внутри
+> `payload` (`AGENTS.md` § 2.1).
+
+#### InlineKeyboardAttachmentPayload
+
+| Поле      | Тип                           | Обязательное | Описание                               |
+|-----------|-------------------------------|--------------|----------------------------------------|
+| `buttons` | array InlineKeyboardButtonRow | **Да**       | Ряды кнопок клавиатуры (минимум 1 ряд) |
+
+### Payload исходящих вложений
+
+#### UploadedInfo — video, audio, file
+
+| Поле    | Тип             | Описание                                                                       |
+|---------|-----------------|--------------------------------------------------------------------------------|
+| `url`   | string `<uri>`  | URL загруженного файла — **нет в официальной схеме** ответа, `AGENTS.md` § 2.1 |
+| `token` | string Nullable | Токен загрузки (в официальной схеме — `readOnly`, у нас nullable)              |
+
+#### PhotoAttachmentRequestPayload
+
+Все поля взаимоисключающие — укажите **ровно одно**: `url` (внешняя ссылка), `token` (готовый токен существующего
+вложения) или `photos` (несколько токенов, полученных после
+`POST /uploads`).
+
+| Поле     | Тип                                              | Описание                            |
+|----------|--------------------------------------------------|-------------------------------------|
+| `url`    | string Nullable                                  | Любой внешний URL изображения       |
+| `token`  | string Nullable                                  | Токен любого существующего вложения |
+| `photos` | object Nullable (map → `PhotoAttachmentPayload`) | Токены после загрузки изображений   |
+
+#### StickerAttachmentRequestPayload
+
+| Поле   | Тип    | Обязательное | Описание    |
+|--------|--------|--------------|-------------|
+| `code` | string | **Да**       | Код стикера |
+
+#### ContactAttachmentRequestPayload
+
+| Поле         | Тип                        | Описание                                               |
+|--------------|----------------------------|--------------------------------------------------------|
+| `name`       | string Nullable            | Имя контакта                                           |
+| `contact_id` | integer Nullable `<int64>` | Идентификатор контакта, если он зарегистрирован в МАКС |
+| `vcf_info`   | string Nullable            | Полная информация о контакте в формате VCF             |
+| `vcf_phone`  | string Nullable            | Телефон контакта в формате VCF                         |
+
+#### share-запрос: используется ShareAttachmentPayload
+
+Официальная схема объявляет отдельный `ShareAttachmentRequestPayload` **пустым объектом**; в спеке запрос `share`
+использует `ShareAttachmentPayload` (`url` + `token`) — как у ответа, так и в отправке, потому что иначе передать ссылку
+для превью нечем. Это сознательное расхождение, `AGENTS.md` § 2.1.
+
+Примеры отправки вложений — в разделах методов ([`POST /messages`](#22-post-messages),
+[`POST /answers`](#27-post-answers), [Inline-клавиатура](#inline-клавиатура)).
 
 ### VideoUrls
 
-| Поле      | Тип             | Описание                |
-|-----------|-----------------|-------------------------|
-| `mp4`     | string Nullable | URL скачивания MP4      |
-| `preview` | string Nullable | URL предпросмотра видео |
+URL-ы для скачивания и потокового воспроизведения по разрешениям. Все поля nullable — приходят только доступные.
+
+| Поле       | Тип             | Описание                       |
+|------------|-----------------|--------------------------------|
+| `mp4_1080` | string Nullable | URL видео в 1080p              |
+| `mp4_720`  | string Nullable | URL видео в 720p               |
+| `mp4_480`  | string Nullable | URL видео в 480p               |
+| `mp4_360`  | string Nullable | URL видео в 360p               |
+| `mp4_240`  | string Nullable | URL видео в 240p               |
+| `mp4_144`  | string Nullable | URL видео в 144p               |
+| `hls`      | string Nullable | URL потоковой трансляции (HLS) |
+
+> Поля `mp4` и `preview`, которые спека объявляла раньше, в официальной `schema.yaml` отсутствуют — исправлено
+> 2026-09-27 по схеме `VideoUrls`. Страница метода `GET /videos/{videoToken}` раскрывает только сам объект
+> `VideoUrls` без полей.
