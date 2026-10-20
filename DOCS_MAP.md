@@ -7,7 +7,9 @@
 сознательные отклонения, реестр полей). (расхождения). Правило источника истины — `AGENTS.md` §3: **только официальная
 дока, факт = URL + дата проверки**.
 
-> Состояние карты: **2026-09-27**. Официальная спека `api-schema` — версия `0.0.33`, коммит 2026-09-18.
+> Состояние карты: **2026-10-19**. Официальная спека `api-schema` — версия `0.0.33`, коммит `1a4a502` (2026-09-18,
+> с прошлой сверки не менялась). Проход 2026-10-19: полная сверка со `schema.yaml` и всеми текстовыми страницами
+> доков; nullability/enum приведены к машинной схеме (см. `AGENTS.md` § 7.1).
 
 ---
 
@@ -22,11 +24,11 @@
 
 **Официальный репозиторий спецификации** — ключевая находка (сентябрь 2026). Локальный `openapi.yaml` собран вручную и
 намеренно отстаёт от официальной схемы по объёму: официальная — OpenAPI **3.0.0**, 18 путей, 133 схемы; наша — 3.1.0, 18
-путей, 32 метода, 105 схем. **Пути совпадают с официальной схемой** (18 = 18): удалённый в июне 2026 `GET /chats`
-убран из нашей спеки 2026-09-27 (см. § 6, пп. 7 и 9). По операциям на один меньше — см. примечание в конце § 4.
+путей, 33 метода, 107 схем. **Пути и операции совпадают с официальной схемой** (18 = 18): удалённый в июне 2026
+`GET /chats` убран из нашей спеки 2026-09-27 (см. § 6, пп. 7 и 9).
 
-**Сверка схем после рефакторинга `Update` и вложений (2026-09-27).** Официальных схем нет у нас — 42, лишних у нас — 14.
-Обе цифры объясняются осознанно:
+**Сверка схем после рефакторинга `Update` и вложений (проверено 2026-10-19, уточнено 2026-10-20).** Официальных схем нет
+у нас — 40, лишних у нас — 14. Обе цифры объясняются осознанно:
 
 | У нас лишние (14)                                                                                               | Причина                                                                                                |
 |-----------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
@@ -36,22 +38,28 @@
 | `SuccessResponse`, `ErrorResponse`                                                                              | обёртки ответов                                                                                        |
 | `VideoAttachmentPayload`, `AudioAttachmentPayload`                                                              | официальные подтипы кладут `url`/`token` на верхний уровень, мы — в `payload` (`AGENTS.md` § 2.1 п. 7) |
 
-Отсутствующие у нас 42 схемы — не упущения, а сознательные решения:
+Отсутствующие у нас 40 схем — не упущения, а сознательные решения:
 
-| Группа                         | Схемы                                                                                                                                                                                                                                                                                                                                                                                                   | Почему нет у нас                                                                                                                                                           |
-|--------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Псевдонимы скаляров            | `ChatId`, `UserId`, `MessageId`, `Url`, `PhotoToken`, `bigint`, `UserIdsList`, `MessageLinkType`                                                                                                                                                                                                                                                                                                        | официальная схема выносит типы в именованные псевдонимы; мы пишем типы прямо в полях                                                                                       |
-| Клавиатура                     | `Button`, `CallbackButton`, `LinkButton`, `MessageButton`, `RequestContactButton`, `RequestGeoLocationButton`, `OpenAppButton`, `ClipboardButton`, `Keyboard`                                                                                                                                                                                                                                           | официальная схема — `oneOf` из 7 кнопок без дискриминатора; у нас одна `InlineKeyboardButton` с `enum` `ButtonType` (это делает тип проверяемым)                           |
-| Обёртки запросов и результатов | `ActionRequestBody`, `BotCommandsInfo`, `BotCommandsPatch`, `ChatPatch`, `SubscriptionRequestBody`, `PinMessageBody`, `SimpleQueryResult`, `SendMessageResult`, `MessageList`, `UpdateList`, `ChatList`, `ChatAdminsList`, `ChatMembersList`, `GetSubscriptionsResult`, `GetPinnedMessageResult`, `ModifyResults`/`ModifyMembersResult`, `Error`, `CallbackAnswer`, `UploadEndpoint`, `SubscriptionUrl` | официальная схема именует каждую обёртку; у нас тело/ответ задаются `$ref` прямо на схему данных, без промежуточного имени                                                 |
-| Заглушки официальной схемы     | `AttachmentPayload`, `MediaAttachmentPayload`, `InlineKeyboardAttachmentRequestPayload`, `ShareAttachmentRequestPayload`                                                                                                                                                                                                                                                                                | первые три — общие/пустые placeholders (`MediaAttachmentPayload` и `ShareAttachmentRequestPayload` вообще без полей); у нас payload привязан к конкретному `type` вложения |
-| Снято вместе с методом         | `FailedUserDetails`                                                                                                                                                                                                                                                                                                                                                                                     | удалён вместе с `POST /chats/{chatId}/members` (§ 5.2 `AGENTS.md`)                                                                                                         |
+| Группа                         | Схемы                                                                                                                                                                                                                                                                                                                                                                 | Почему нет у нас                                                                                                                                                                                         |
+|--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Псевдонимы скаляров            | `ChatId`, `UserId`, `MessageId`, `Url`, `PhotoToken`, `bigint`, `UserIdsList`, `MessageLinkType`                                                                                                                                                                                                                                                                      | официальная схема выносит типы в именованные псевдонимы; мы пишем типы прямо в полях                                                                                                                     |
+| Клавиатура                     | `Button`, `CallbackButton`, `LinkButton`, `MessageButton`, `RequestContactButton`, `RequestGeoLocationButton`, `OpenAppButton`, `ClipboardButton`, `Keyboard`                                                                                                                                                                                                         | официальная схема — `oneOf` из 7 кнопок без дискриминатора; у нас одна `InlineKeyboardButton` с `enum` `ButtonType` (это делает тип проверяемым)                                                         |
+| Обёртки запросов и результатов | `ActionRequestBody`, `BotCommandsInfo`, `BotCommandsPatch`, `ChatPatch`, `SubscriptionRequestBody`, `PinMessageBody`, `SimpleQueryResult`, `SendMessageResult`, `MessageList`, `UpdateList`, `ChatList`, `ChatAdminsList`, `ChatMembersList`, `GetSubscriptionsResult`, `GetPinnedMessageResult`, `ModifyMembersResult`, `Error`, `CallbackAnswer`, `SubscriptionUrl` | официальная схема именует каждую обёртку; у нас тело/ответ задаются `$ref` прямо на схему данных, без промежуточного имени                                                                               |
+| Заглушки официальной схемы     | `AttachmentPayload`, `MediaAttachmentPayload`, `InlineKeyboardAttachmentRequestPayload`, `VideoAttachmentDetails`                                                                                                                                                                                                                                                     | первые три — общие/пустые placeholders (`AttachmentPayload` — только `url`, `MediaAttachmentPayload` — вообще без полей); `VideoAttachmentDetails` — ответ `GET /videos/{videoToken}`, у нас `VideoInfo` |
 
-Структурные решения — `AGENTS.md` § 2.1, известные артефакты скрипта — `AGENTS.md` § 7.1.
+> `UploadEndpoint` и `FailedUserDetails` в списке отсутствующих больше нет: `UploadEndpoint` добавлен в спеку 2026-10-20
+> как
+> отдельная схема ответа `POST /uploads` (обязательный `url`, nullable `token`), `FailedUserDetails` возвращён
+> 2026-10-19
+> вместе с операцией `POST /chats/{chatId}/members` (§ 5.2 `AGENTS.md`).
+
+Структурные решения — `AGENTS.md` § 2.1; компараторы и реестр зарегистрированных отклонений — `tools/`
+(`python3 tools/check_spec.py`), их разбор — `AGENTS.md` § 7.1.
 
 ```bash
 # разовая сверка (клонировать один раз в /tmp)
 git clone --depth 1 https://github.com/max-messenger/api-schema.git /tmp/opencode/max-official
-# в официальной схеме смотреть: paths, components.schemas, components.responses
+python3 tools/check_spec.py   # валидация + три компаратора + реестр отклонений
 ```
 
 ---
@@ -71,7 +79,7 @@ git clone --depth 1 https://github.com/max-messenger/api-schema.git /tmp/opencod
 | Отправка: стикеры и контакты     | `/docs-api/use-cases/sending-messages/another-attachments` | `StickerAttachment`, `ContactAttachment`                                       |
 | Модерация комментариев           | `/docs-api/use-cases/comment-moderation`                   | Права `read_all_messages`/`write_all_messages`, сценарии комментариев          |
 | История изменений API            | `/docs-api/changelog-api`                                  | Журнал релизов по группам: Bots / Chats / Comments / Uploads / Messages        |
-| Методы                           | `/docs-api/methods/{VERB}/{path-шаблон}`                   | 32 метода в 7 группах, см. §4                                                  |
+| Методы                           | `/docs-api/methods/{VERB}/{path-шаблон}`                   | 33 метода в 7 группах, см. §4                                                  |
 | Объекты                          | `/docs-api/objects/{Object}`                               | 11 страниц объектов, см. §5                                                    |
 
 **Правило формирования URL метода.** Фигурные скобки пути заменяются на `-имя-`:
@@ -110,7 +118,7 @@ git clone --depth 1 https://github.com/max-messenger/api-schema.git /tmp/opencod
 
 ---
 
-## 4. Карта методов (32 метода в 7 группах)
+## 4. Карта методов (33 метода в 7 группах)
 
 `✓` = есть в `openapi.yaml`, `—` = отсутствует.
 
@@ -121,23 +129,24 @@ git clone --depth 1 https://github.com/max-messenger/api-schema.git /tmp/opencod
 | GET   | `/me`          | `/docs-api/methods/GET/me`            | ✓             |
 | PATCH | `/me/commands` | `/docs-api/methods/PATCH/me/commands` | ✓ (июль 2026) |
 
-### chats (13)
+### chats (14)
 
-| Метод  | Путь                                      | Doc-URL                                                           | В спеке                 |
-|--------|-------------------------------------------|-------------------------------------------------------------------|-------------------------|
-| GET    | `/chats/{chatId}`                         | `/docs-api/methods/GET/chats/-chatId-`                            | ✓                      |
-| PATCH  | `/chats/{chatId}`                         | `/docs-api/methods/PATCH/chats/-chatId-`                          | ✓ (есть `description`) |
-| POST   | `/chats/{chatId}/actions`                 | `/docs-api/methods/POST/chats/-chatId-/actions`                   | ✓                      |
-| GET    | `/chats/{chatId}/pin`                     | `/docs-api/methods/GET/chats/-chatId-/pin`                        | ✓                      |
-| PUT    | `/chats/{chatId}/pin`                     | `/docs-api/methods/PUT/chats/-chatId-/pin`                        | ✓                      |
-| DELETE | `/chats/{chatId}/pin`                     | `/docs-api/methods/DELETE/chats/-chatId-/pin`                     | ✓                      |
-| GET    | `/chats/{chatId}/members/me`              | `/docs-api/methods/GET/chats/-chatId-/members/me`                 | ✓                      |
-| DELETE | `/chats/{chatId}/members/me`              | `/docs-api/methods/DELETE/chats/-chatId-/members/me`              | ✓                      |
-| GET    | `/chats/{chatId}/members/admins`          | `/docs-api/methods/GET/chats/-chatId-/members/admins`             | ✓                      |
-| POST   | `/chats/{chatId}/members/admins`          | `/docs-api/methods/POST/chats/-chatId-/members/admins`            | ✓                      |
-| DELETE | `/chats/{chatId}/members/admins/{userId}` | `/docs-api/methods/DELETE/chats/-chatId-/members/admins/-userId-` | ✓                      |
-| GET    | `/chats/{chatId}/members`                 | `/docs-api/methods/GET/chats/-chatId-/members`                    | ✓                      |
-| DELETE | `/chats/{chatId}/members`                 | `/docs-api/methods/DELETE/chats/-chatId-/members`                 | ✓                      |
+| Метод  | Путь                                      | Doc-URL                                                           | В спеке                    |
+|--------|-------------------------------------------|-------------------------------------------------------------------|----------------------------|
+| GET    | `/chats/{chatId}`                         | `/docs-api/methods/GET/chats/-chatId-`                            | ✓                         |
+| PATCH  | `/chats/{chatId}`                         | `/docs-api/methods/PATCH/chats/-chatId-`                          | ✓ (есть `description`)    |
+| POST   | `/chats/{chatId}/actions`                 | `/docs-api/methods/POST/chats/-chatId-/actions`                   | ✓                         |
+| GET    | `/chats/{chatId}/pin`                     | `/docs-api/methods/GET/chats/-chatId-/pin`                        | ✓                         |
+| PUT    | `/chats/{chatId}/pin`                     | `/docs-api/methods/PUT/chats/-chatId-/pin`                        | ✓                         |
+| DELETE | `/chats/{chatId}/pin`                     | `/docs-api/methods/DELETE/chats/-chatId-/pin`                     | ✓                         |
+| GET    | `/chats/{chatId}/members/me`              | `/docs-api/methods/GET/chats/-chatId-/members/me`                 | ✓                         |
+| DELETE | `/chats/{chatId}/members/me`              | `/docs-api/methods/DELETE/chats/-chatId-/members/me`              | ✓                         |
+| GET    | `/chats/{chatId}/members/admins`          | `/docs-api/methods/GET/chats/-chatId-/members/admins`             | ✓                         |
+| POST   | `/chats/{chatId}/members/admins`          | `/docs-api/methods/POST/chats/-chatId-/members/admins`            | ✓                         |
+| DELETE | `/chats/{chatId}/members/admins/{userId}` | `/docs-api/methods/DELETE/chats/-chatId-/members/admins/-userId-` | ✓                         |
+| GET    | `/chats/{chatId}/members`                 | `/docs-api/methods/GET/chats/-chatId-/members`                    | ✓                         |
+| POST   | `/chats/{chatId}/members`                 | `/docs-api/methods/POST/chats/-chatId-/members`                   | ✓ (возвращена 2026-10-19) |
+| DELETE | `/chats/{chatId}/members`                 | `/docs-api/methods/DELETE/chats/-chatId-/members`                 | ✓                         |
 
 ### subscriptions (3) + Long Polling (1)
 
@@ -180,10 +189,9 @@ git clone --depth 1 https://github.com/max-messenger/api-schema.git /tmp/opencod
 > `recipient.chat_type: channel` + `recipient.post_id`. События `comment_created` / `comment_edited` /
 > `comment_removed` приходят боту только с правом `read_all_messages`.
 
-> Пути совпадают: **18 официально = 18 у нас** (после удаления `GET /chats` 2026-09-27). Методов на один меньше:
-> **32 у нас против 33 официально** — из `POST /chats/{chatId}/members` удалена только операция `post` (сам путь
-> остался из-за `get`/`delete`), потому что метод объявлен удаляемым 30.09.2026, а официальная `schema.yaml` на
-> 2026-09-27 ещё держит и путь, и операцию. После 30.09.2026 ожидаемое расхождение исчезнет само.
+> Пути и операции совпадают: **18 официально = 18 у нас**, **33 метода = 33 метода**
+> (после удаления `GET /chats` 2026-09-27 и возвращения `POST /chats/{chatId}/members` 2026-10-19 —
+> пометка об удалении метода к тому времени исчезла из доки).
 
 ---
 
@@ -213,26 +221,27 @@ git clone --depth 1 https://github.com/max-messenger/api-schema.git /tmp/opencod
 
 ---
 
-## 6. Известные расхождения на 2026-09-27 (сводка для сверки)
+## 6. Известные расхождения на 2026-10-19 (сводка для сверки)
 
-Проход 2026-09-27 закрыл пп. 1–8. Открытые пункты перенесены в `AGENTS.md` § 5.1 и § 2.1.
+Проход 2026-09-27 закрыл пп. 1–8; проход 2026-10-19 подтвердил все закрытые пункты и **не нашёл новых пропусков**
+(официальная `schema.yaml` не менялась). Открытые пункты перенесены в `AGENTS.md` § 5.1 и § 2.1.
 
-| #  | Расхождение                                                                                                                                                                                 | Источник                                                                       | Статус                                                          |
-|----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------|-----------------------------------------------------------------|
-| 1  | ~~**5 методов comments отсутствуют** в `openapi.yaml`~~                                                                                                                                     | changelog-api, август 2026                                                     | **закрыто 2026-09-27**                                          |
-| 2  | ~~**3 события комментариев отсутствуют** в `Update`: `comment_created`, `comment_removed`, `comment_edited`~~                                                                               | changelog-api, август 2026                                                     | **закрыто 2026-09-27**                                          |
-| 3  | ~~`LinkedMessage`: в спеке `sender: integer/int64` + поля `chat`, `mid`; официально `sender` → **объект `User`**, поля `chat_id` + `message` (`MessageBody`), `required: [type, message]`~~ | `api-schema`                                                                   | **закрыто 2026-09-27**, `AGENTS.md` § 5.1 п. 5                  |
-| 4  | ~~`NewMessageLink`: в спеке enum `reply`/`forward`; официально enum **`forward`/`reply`** (порядок) и `required: [type, mid]`~~                                                             | `api-schema`                                                                   | **закрыто 2026-09-27**, `AGENTS.md` § 5.1 пп. 3, 4, 6           |
-| 5  | ~~`LinkedMessage.type`: в спеке `forwarded`/`reply`; официально `forward`/`reply`~~                                                                                                         | `api-schema`                                                                   | **закрыто 2026-09-27**                                          |
-| 6  | ~~`PATCH /chats/{chatId}` — нет поля `description` (официально: до 16000 символов, пустая строка снимает)~~                                                                                 | changelog-api, август 2026                                                     | **закрыто 2026-09-27**                                          |
-| 7  | ~~`POST /chats/{chatId}/members` — ограничение с 09.09.2026, **удаление 30.09.2026**~~                                                                                                      | **только** страница метода (changelog упоминает лишь ограничение с 09.09.2026) | **закрыто 2026-09-27** — метод удалён из спеки за 3 дня до даты |
-| 8  | `disable_link_preview` — добавлен в `POST /answers`; в официальной схеме также у `POST /messages`                                                                                           | `api-schema`                                                                   | **закрыто 2026-09-27**                                          |
-| 9  | ~~`GET /chats` — в официальной схеме путь **удалён**, мы держали его как `deprecated`~~                                                                                                     | changelog-api, июнь 2026                                                       | **закрыто 2026-09-27** — путь удалён из спеки и справочника     |
-| 10 | Ответы используют коды 403/405/500, которых нет в списке кодов на `/docs-api`                                                                                                               | `api-schema`                                                                   | баг док, в AGENTS.md §5                                         |
-| 11 | Раздел `/docs/open-api` не зафиксирован в `AGENTS.md` §3                                                                                                                                    | `/docs`                                                                        | **закрыто 2026-09-27**                                          |
-| 12 | Официальная схема — OpenAPI **3.0.0**, наша — 3.1.0; 133 схемы против 105                                                                                                                   | `api-schema`                                                                   | сознательное решение, `AGENTS.md` § 2.1 и § 5.1                 |
-| 13 | ~~Плоский `Update` вместо `oneOf` + `discriminator`~~                                                                                                                                       | `api-schema`                                                                   | **закрыто 2026-09-27** — 19 подтипов + `UpdateBase`             |
-| 14 | ~~`Attachment` без подтипов; `location` прятал координаты в `payload`~~                                                                                                                     | `api-schema`                                                                   | **закрыто 2026-09-27** — 9+9 подтипов, координаты наверху       |
+| #  | Расхождение                                                                                                                                                                                 | Источник                                                                       | Статус                                                                                                                |
+|----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| 1  | ~~**5 методов comments отсутствуют** в `openapi.yaml`~~                                                                                                                                     | changelog-api, август 2026                                                     | **закрыто 2026-09-27**                                                                                                |
+| 2  | ~~**3 события комментариев отсутствуют** в `Update`: `comment_created`, `comment_removed`, `comment_edited`~~                                                                               | changelog-api, август 2026                                                     | **закрыто 2026-09-27**                                                                                                |
+| 3  | ~~`LinkedMessage`: в спеке `sender: integer/int64` + поля `chat`, `mid`; официально `sender` → **объект `User`**, поля `chat_id` + `message` (`MessageBody`), `required: [type, message]`~~ | `api-schema`                                                                   | **закрыто 2026-09-27**, `AGENTS.md` § 5.1 п. 5                                                                        |
+| 4  | ~~`NewMessageLink`: в спеке enum `reply`/`forward`; официально enum **`forward`/`reply`** (порядок) и `required: [type, mid]`~~                                                             | `api-schema`                                                                   | **закрыто 2026-09-27**, `AGENTS.md` § 5.1 пп. 3, 4, 6                                                                 |
+| 5  | ~~`LinkedMessage.type`: в спеке `forwarded`/`reply`; официально `forward`/`reply`~~                                                                                                         | `api-schema`                                                                   | **закрыто 2026-09-27**                                                                                                |
+| 6  | ~~`PATCH /chats/{chatId}` — нет поля `description` (официально: до 16000 символов, пустая строка снимает)~~                                                                                 | changelog-api, август 2026                                                     | **закрыто 2026-09-27**                                                                                                |
+| 7  | ~~`POST /chats/{chatId}/members` — ограничение с 09.09.2026, **удаление 30.09.2026**~~                                                                                                      | **только** страница метода (changelog упоминает лишь ограничение с 09.09.2026) | **отменено 2026-10-19** — пометки об удалении в доке больше нет, метод жив: операция и `FailedUserDetails` возвращены |
+| 8  | `disable_link_preview` — добавлен в `POST /answers`; в официальной схеме также у `POST /messages`                                                                                           | `api-schema`                                                                   | **закрыто 2026-09-27**                                                                                                |
+| 9  | ~~`GET /chats` — в официальной схеме путь **удалён**, мы держали его как `deprecated`~~                                                                                                     | changelog-api, июнь 2026                                                       | **закрыто 2026-09-27** — путь удалён из спеки и справочника                                                           |
+| 10 | Ответы используют коды 403/405/500, которых нет в списке кодов на `/docs-api`                                                                                                               | `api-schema`                                                                   | баг док, в AGENTS.md §5                                                                                               |
+| 11 | Раздел `/docs/open-api` не зафиксирован в `AGENTS.md` §3                                                                                                                                    | `/docs`                                                                        | **закрыто 2026-09-27**                                                                                                |
+| 12 | Официальная схема — OpenAPI **3.0.0**, наша — 3.1.0; 133 схемы против 105                                                                                                                   | `api-schema`                                                                   | сознательное решение, `AGENTS.md` § 2.1 и § 5.1                                                                       |
+| 13 | ~~Плоский `Update` вместо `oneOf` + `discriminator`~~                                                                                                                                       | `api-schema`                                                                   | **закрыто 2026-09-27** — 19 подтипов + `UpdateBase`                                                                   |
+| 14 | ~~`Attachment` без подтипов; `location` прятал координаты в `payload`~~                                                                                                                     | `api-schema`                                                                   | **закрыто 2026-09-27** — 9+9 подтипов, координаты наверху                                                             |
 
 **Открытые расхождения** после прохода 2026-09-27 — в `AGENTS.md` § 5.1 и § 2.1. Остались только сознательные решения:
 именованные базы `UpdateBase`/`AttachmentBase`/`AttachmentRequestBase`, размещение части метаданных вложений внутри
@@ -250,8 +259,13 @@ OpenAPI 3.1.0 (с 2026-09-27 nullability выражена 3.1-легально: 
 `AudioAttachmentPayload.transcription`, `ShareAttachmentPayload.title`/`description`/`image_url`, схема
 `VideoThumbnail`, а также `required` у `VideoAttachmentPayload`, `AudioAttachmentPayload`,
 `InlineKeyboardAttachmentPayload` и `ChatMember`. Расхождения по полям (`VideoUrls`,
-`PhotoAttachmentPayload`, `ContactAttachmentPayload`) закрыты. `FailedUserDetails` исправлена была и затем удалена
-вместе с операцией `POST /chats/{chatId}/members`.
+`PhotoAttachmentPayload`, `ContactAttachmentPayload`) закрыты. `FailedUserDetails` исправлена была, затем удалена вместе
+с операцией `POST /chats/{chatId}/members` и **возвращена 2026-10-19** (пометка об удалении метода исчезла из доки;
+состав полей приведён к официальной `schema.yaml`: `error_code` + `user_ids`). Проход 2026-10-19 дополнительно привёл
+nullability/enum к машинной схеме: `ChatStatus.suspended`, nullable `last_activity_time` (`User`/`UserWithPhoto`/
+`BotInfo`/`ChatMember`) и `NewMessageBody.format`; не-nullable `user_locale` в `bot_started`/`bot_stopped`/`dialog_*`,
+`Callback.payload`, `LinkedMessage.chat_id`, `CommentLinkedMessage.chat_id`, `UploadedInfo.token` — см. `AGENTS.md`
+§ 7.1.
 
 ---
 
@@ -263,28 +277,26 @@ OpenAPI 3.1.0 (с 2026-09-27 nullability выражена 3.1-легально: 
    `AGENTS.md` §4 / `README.md` «Последнее обновление».
 2. Сверить с официальной `schema.yaml`: `version:` в шапке и состав `paths` / `components.schemas`.
 3. Если изменилось — править **оба** файла: `openapi.yaml` и `MAX_API_REFERENCE.md` (`AGENTS.md` §6 п. 2).
-4. Запустить валидацию из `AGENTS.md` §7 и обновить дату в `README.md`.
+4. Запустить проверки — `python3 tools/check_spec.py` (валидация + сверка, `AGENTS.md` §7) — и обновить дату в
+   `README.md`.
 
 ### 7.2 Машинная сверка (когда расхождений много)
 
 ```bash
 git clone --depth 1 https://github.com/max-messenger/api-schema.git /tmp/opencode/max-official
-python3 - <<'PY'
-import yaml
-off = yaml.safe_load(open('/tmp/opencode/max-official/schema.yaml'))
-our = yaml.safe_load(open('openapi.yaml'))
-o, u = set(off['paths']), set(our['paths'])
-print('нет в нашей спеке:', sorted(o - u))
-print('лишние у нас:     ', sorted(u - o))
-os_, us_ = set(off['components']['schemas']), set(our['components']['schemas'])
-print('схем нет у нас:', len(os_ - us_), '| лишних у нас:', sorted(us_ - os_))
-PY
+python3 tools/check_spec.py   # валидация + три компаратора + реестр зарегистрированных отклонений
 ```
 
-> Ожидаемый результат на 2026-09-27 (после рефакторинга `Update` и вложений): **пути — пусто в обе стороны**;
-> операций — официально на 1 больше (`POST /chats/{chatId}/members`, удаляется 30.09.2026);
-> **схем нет у нас 42, лишних у нас 14**. Обе цифры разобраны по группам в § 1; решения — `AGENTS.md` § 2.1,
+> Ожидаемый результат на 2026-10-20: **пути и операции — пусто в обе стороны** (18 = 18);
+> **схем нет у нас 40, лишних у нас 14**. Обе цифры разобраны по группам в § 1; решения — `AGENTS.md` § 2.1,
 > артефакты скрипта — `AGENTS.md` § 7.1.
+
+> **Тела запросов и 2xx-ответов** сверяются отдельно — компаратором `tools/op_bodies_diff.py`
+> (описан в `AGENTS.md` § 7.1): официальные обёртки у нас часто записаны инлайн, поэтому сравнение идёт по составу
+> полей, а не по именам схем. Итог на 2026-10-20: расхождений нет, кроме зарегистрированных (`User.name`/`BotInfo.name`
+> — § 2.1, `marker` в теле `POST /chats/{chatId}/members/admins` — § 5). Единая команда `tools/check_spec.py` прогоняет
+> валидацию и все три компаратора и отделяет зарегистрированные отклонения от новых — **на 2026-10-20: 103
+> зарегистрированных, новых 0**.
 
 ### 7.3 Проверка конкретного метода на изменение
 

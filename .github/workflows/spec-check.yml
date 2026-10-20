@@ -1,0 +1,43 @@
+name: Проверка спецификации
+
+# Единая проверка: валидация openapi.yaml (OpenAPI 3.1.0, $ref, дубли ключей),
+# сверка отметки info.x-official-schema и три компаратора с официальной схемой MAX.
+# Красная сборка = новое незарегистрированное расхождение, устаревшая отметка версии
+# (официальная схема обновилась) или сбой валидации. См. AGENTS.md § 7.1, QUALITY.md § 5.
+
+on:
+  push:
+  pull_request:
+  # Расписание ловит обновления официальной схемы между правками спеки.
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: spec-check-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Путь к клону официальной schema.yaml (см. tools/_common.py).
+  OFFICIAL_SCHEMA: ${{ github.workspace }}/official-schema/schema.yaml
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Клонировать репозиторий
+        uses: actions/checkout@v4
+
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Установить зависимости
+        run: python -m pip install --upgrade pip pyyaml openapi-spec-validator
+
+      - name: Клонировать официальную схему MAX
+        run: git clone --depth 1 https://github.com/max-messenger/api-schema.git official-schema
+
+      - name: Валидация + сверка (tools/check_spec.py)
+        run: python3 tools/check_spec.py
