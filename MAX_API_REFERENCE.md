@@ -883,7 +883,7 @@
 | `height`    | integer                                         | **Да**       | Высота видео                                               |
 | `duration`  | integer                                         | **Да**       | Продолжительность в секундах                               |
 
-> Схема `VideoInfo` в спеке соответствует официальной `VideoAttachmentDetails` (проверено 2026-09-27): обязательны
+> Схема `VideoAttachmentDetails` в спеке соответствует официальной (проверено 2026-09-27): обязательны
 > `token`, `width`, `height`, `duration`. Поля `urls` и `thumbnail` остаются опциональными.
 
 ---
@@ -1829,15 +1829,26 @@ ChatMember.
 
 ### Свойства кнопки
 
-| Свойство     | Тип               | Обязательное | Описание                                                                                                                                           |
-|--------------|-------------------|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
-| `type`       | enum `ButtonType` | Да           | Тип кнопки                                                                                                                                         |
-| `text`       | string            | Да           | Текст кнопки (максимум 2048 символов, поддерживает форматирование)                                                                                 |
-| `payload`    | string Nullable   | Нет          | Данные пользователя, возвращаемые в `callback`; для `clipboard` — текст для копирования; максимум 8 КБ. Если отсутствует, `callback` вернёт `null` |
-| `url`        | string Nullable   | Нет          | URL ссылки (для типа `link`; максимум 2048 символов)                                                                                               |
-| `intent`     | string Nullable   | Нет          | Для `request_geo_location`: `sendOnce` (одноразово) или `sendLive` (реальная геолокация)                                                           |
-| `web_app`    | string Nullable   | Нет          | Публичное имя (username) бота или ссылка на него, чьё мини-приложение открыть (для `open_app`). URL мини-приложения задаётся на платформе MAX      |
-| `contact_id` | integer Nullable  | Нет          | ID бота, чьё мини-приложение открыть (альтернатива `web_app` для `open_app`)                                                                       |
+Кнопка — это схема `Button` с дискриминатором по `type` и 7 подтипами (`CallbackButton`, `LinkButton`,
+`MessageButton`, `RequestContactButton`, `RequestGeoLocationButton`, `OpenAppButton`, `ClipboardButton`), наследуемыми
+через `allOf`. Базовые поля:
+
+| Свойство | Тип                     | Обязательное | Описание                   |
+|----------|-------------------------|--------------|----------------------------|
+| `type`   | string                  | Да           | Тип кнопки (дискриминатор) |
+| `text`   | string (1–128 символов) | Да           | Видимый текст кнопки       |
+
+Поля подтипов (по `type`):
+
+| `type`                 | Схема                      | Дополнительные поля                                                                                                               |
+|------------------------|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| `callback`             | `CallbackButton`           | `payload` string (maxLength 1024, **обязательное**) — данные, возвращаемые в `callback`                                           |
+| `link`                 | `LinkButton`               | `url` string (maxLength 2048, **обязательное**) — ссылка                                                                          |
+| `message`              | `MessageButton`            | —                                                                                                                                 |
+| `request_contact`      | `RequestContactButton`     | —                                                                                                                                 |
+| `request_geo_location` | `RequestGeoLocationButton` | `quick` boolean (default `false`) — если `true`, отправляет геолокацию без запроса подтверждения                                  |
+| `open_app`             | `OpenAppButton`            | `web_app` string (**обязательное**), `payload` string Nullable (pattern `^[\w-]*$`, maxLength 512), `contact_id` integer Nullable |
+| `clipboard`            | `ClipboardButton`          | `payload` string (maxLength 1024, **обязательное**) — текст для копирования                                                       |
 
 ---
 
@@ -2149,8 +2160,7 @@ MAX пользователя. Это делает контакт пригодн�
 | `Attachment`        | входящие: `GET /updates`, объекты `Message` и `CommentMessage`     | 9 подтипов |
 | `AttachmentRequest` | исходящие: `POST /messages`, `PUT /messages`, комментарии к постам | 9 подтипов |
 
-Оба набора — `oneOf` с `discriminator` по полю `type`. Подтип ответа задаёт значение `type`
-через `enum` из одного элемента, поэтому валидатор отбрасывает несовпадения без разбора `oneOf`.
+Оба набора — `discriminator` по полю `type`; подтипы наследуют базу через `allOf`.
 
 У всех подтипов, кроме `location`, форма одинаковая: `type` + обязательный `payload`. У `location` **payload нет** —
 координаты лежат на верхнем уровне объекта (официальная
@@ -2164,19 +2174,37 @@ MAX пользователя. Это делает контакт пригодн�
 }
 ```
 
-| `type`            | Подтип ответа              | `payload` ответа                  | Подтип запроса                    | `payload` запроса                 |
-|-------------------|----------------------------|-----------------------------------|-----------------------------------|-----------------------------------|
-| `image`           | `PhotoAttachment`          | `PhotoAttachmentPayload`          | `PhotoAttachmentRequest`          | `PhotoAttachmentRequestPayload`   |
-| `video`           | `VideoAttachment`          | `VideoAttachmentPayload`          | `VideoAttachmentRequest`          | `UploadedInfo`                    |
-| `audio`           | `AudioAttachment`          | `AudioAttachmentPayload`          | `AudioAttachmentRequest`          | `UploadedInfo`                    |
-| `file`            | `FileAttachment`           | `FileAttachmentPayload`           | `FileAttachmentRequest`           | `UploadedInfo`                    |
-| `sticker`         | `StickerAttachment`        | `StickerAttachmentPayload`        | `StickerAttachmentRequest`        | `StickerAttachmentRequestPayload` |
-| `contact`         | `ContactAttachment`        | `ContactAttachmentPayload`        | `ContactAttachmentRequest`        | `ContactAttachmentRequestPayload` |
-| `inline_keyboard` | `InlineKeyboardAttachment` | `InlineKeyboardAttachmentPayload` | `InlineKeyboardAttachmentRequest` | `InlineKeyboardAttachmentPayload` |
-| `share`           | `ShareAttachment`          | `ShareAttachmentPayload`          | `ShareAttachmentRequest`          | `ShareAttachmentPayload`          |
-| `location`        | `LocationAttachment`       | — (координаты наверху)            | `LocationAttachmentRequest`       | — (координаты наверху)            |
+| `type`            | Подтип ответа              | `payload` ответа           | Подтип запроса                    | `payload` запроса                        |
+|-------------------|----------------------------|----------------------------|-----------------------------------|------------------------------------------|
+| `image`           | `PhotoAttachment`          | `PhotoAttachmentPayload`   | `PhotoAttachmentRequest`          | `PhotoAttachmentRequestPayload`          |
+| `video`           | `VideoAttachment`          | `MediaAttachmentPayload`   | `VideoAttachmentRequest`          | `UploadedInfo`                           |
+| `audio`           | `AudioAttachment`          | `MediaAttachmentPayload`   | `AudioAttachmentRequest`          | `UploadedInfo`                           |
+| `file`            | `FileAttachment`           | `FileAttachmentPayload`    | `FileAttachmentRequest`           | `UploadedInfo`                           |
+| `sticker`         | `StickerAttachment`        | `StickerAttachmentPayload` | `StickerAttachmentRequest`        | `StickerAttachmentRequestPayload`        |
+| `contact`         | `ContactAttachment`        | `ContactAttachmentPayload` | `ContactAttachmentRequest`        | `ContactAttachmentRequestPayload`        |
+| `inline_keyboard` | `InlineKeyboardAttachment` | `Keyboard`                 | `InlineKeyboardAttachmentRequest` | `InlineKeyboardAttachmentRequestPayload` |
+| `share`           | `ShareAttachment`          | `ShareAttachmentPayload`   | `ShareAttachmentRequest`          | `ShareAttachmentPayload`                 |
+| `location`        | `LocationAttachment`       | — (координаты наверху)     | `LocationAttachmentRequest`       | — (координаты наверху)                   |
+
+> Метаданные вложений (`width`/`height`/`thumbnail`/`duration` у видео, `filename`/`size` у файла,
+> `width`/`height` у стикера, `transcription` у аудио, `title`/`description`/`image_url` у превью) лежат на
+> **верхнем уровне подтипа** (`VideoAttachment`, `FileAttachment`, …), а не в `payload` — как в официальной схеме.
 
 ### Payload входящих вложений
+
+#### AttachmentPayload (базовый)
+
+| Поле  | Тип    | Обязательное | Описание       |
+|-------|--------|--------------|----------------|
+| `url` | string | **Да**       | URL медиафайла |
+
+#### MediaAttachmentPayload (видео/аудио)
+
+Наследует `AttachmentPayload` и добавляет `token`:
+
+| Поле    | Тип    | Обязательное | Описание                                 |
+|---------|--------|--------------|------------------------------------------|
+| `token` | string | **Да**       | Токен медиафайла (для переиспользования) |
 
 #### PhotoAttachmentPayload
 
@@ -2189,59 +2217,43 @@ MAX пользователя. Это делает контакт пригодн�
 > Габаритов `width`/`height` здесь нет: официальная схема объявляет их для видео и стикера, но сознательно
 > не для фото, и страницы доков их не упоминают. Удалены 2026-09-27 (`AGENTS.md` § 5.1 п. 7).
 
-Используется также как `thumbnail` в `VideoInfo` — официальный `VideoAttachmentDetails.thumbnail` ссылается именно на
-`PhotoAttachmentPayload` (в отличие от `VideoAttachment.thumbnail`, где тип — `VideoThumbnail`).
+Используется также как `thumbnail` в `VideoAttachmentDetails` — официальный `VideoAttachmentDetails.thumbnail`
+ссылается именно на `PhotoAttachmentPayload` (в отличие от `VideoAttachment.thumbnail`, где тип — `VideoThumbnail`).
 
 Форматы изображения: JPG, JPEG, PNG, GIF, TIFF, BMP, HEIC. Максимум 50 МБ или 7680×7680 px.
 
-#### VideoAttachmentPayload
+#### VideoAttachment (метаданные на верхнем уровне)
 
-| Поле        | Тип                              | Обязательное | Описание                                                   |
-|-------------|----------------------------------|--------------|------------------------------------------------------------|
-| `url`       | object `VideoUrls`               | **Да**       | URL для скачивания/воспроизведения (см. `AGENTS.md` § 2.1) |
-| `token`     | string                           | **Да**       | Токен медиафайла                                           |
-| `duration`  | integer Nullable                 | Нет          | Продолжительность в секундах                               |
-| `width`     | integer Nullable                 | Нет          | Ширина в пикселях                                          |
-| `height`    | integer Nullable                 | Нет          | Высота в пикселях                                          |
-| `thumbnail` | object `VideoThumbnail` Nullable | Нет          | Обложка (`url` обязателен внутри)                          |
+| Поле        | Тип                              | Обязательное | Описание                          |
+|-------------|----------------------------------|--------------|-----------------------------------|
+| `payload`   | `MediaAttachmentPayload`         | **Да**       | URL + токен                       |
+| `thumbnail` | object `VideoThumbnail` Nullable | Нет          | Обложка (`url` обязателен внутри) |
+| `width`     | integer Nullable                 | Нет          | Ширина в пикселях                 |
+| `height`    | integer Nullable                 | Нет          | Высота в пикселях                 |
+| `duration`  | integer Nullable                 | Нет          | Продолжительность в секундах      |
 
-> `width`/`height`/`thumbnail` официально объявлены на верхнем уровне `VideoAttachment`, у нас — внутри
-> `payload`; набор полей и обязательность совпадают (`AGENTS.md` § 2.1).
+#### AudioAttachment (метаданные на верхнем уровне)
 
-#### AudioAttachmentPayload
+| Поле            | Тип                      | Обязательное | Описание          |
+|-----------------|--------------------------|--------------|-------------------|
+| `payload`       | `MediaAttachmentPayload` | **Да**       | URL + токен       |
+| `transcription` | string Nullable          | Нет          | Расшифровка аудио |
 
-| Поле            | Тип              | Обязательное | Описание                     |
-|-----------------|------------------|--------------|------------------------------|
-| `url`           | string           | **Да**       | URL аудио                    |
-| `token`         | string           | **Да**       | Токен медиафайла             |
-| `duration`      | integer Nullable | Нет          | Продолжительность в секундах |
-| `transcription` | string Nullable  | Нет          | Расшифровка аудио            |
+#### FileAttachment (метаданные на верхнем уровне)
 
-#### FileAttachmentPayload
+| Поле       | Тип                     | Обязательное | Описание        |
+|------------|-------------------------|--------------|-----------------|
+| `payload`  | `FileAttachmentPayload` | **Да**       | URL + токен     |
+| `filename` | string                  | **Да**       | Имя файла       |
+| `size`     | integer `<int64>`       | **Да**       | Размер в байтах |
 
-| Поле       | Тип               | Обязательное | Описание                                                                        |
-|------------|-------------------|--------------|---------------------------------------------------------------------------------|
-| `url`      | string `<uri>`    | **Да**       | URL файла                                                                       |
-| `token`    | string            | **Да**       | Токен файла — используйте, чтобы переиспользовать один файл в других сообщениях |
-| `filename` | string            | **Да**       | Имя файла                                                                       |
-| `size`     | integer `<int64>` | **Да**       | Размер в байтах                                                                 |
+#### StickerAttachment (метаданные на верхнем уровне)
 
-> `filename` и `size` официально объявлены на верхнем уровне `FileAttachment`, у нас — внутри `payload`
-> (`AGENTS.md` § 2.1). Поле `file_size` удалено 2026-09-27: официальный размер — `size` в байтах.
-
-#### StickerAttachmentPayload
-
-| Поле     | Тип              | Обязательное | Описание          |
-|----------|------------------|--------------|-------------------|
-| `url`    | string `<uri>`   | **Да**       | URL стикера       |
-| `token`  | string           | **Да**       | Токен вложения    |
-| `code`   | string           | **Да**       | Код стикера       |
-| `width`  | integer Nullable | **Да**       | Ширина в пикселях |
-| `height` | integer Nullable | **Да**       | Высота в пикселей |
-
-> `code` и `url` (из `AttachmentPayload`) объявлены официально; `width`/`height` официально требуются в
-> `StickerAttachment`, у нас — внутри `payload` (`AGENTS.md` § 2.1). Утверждение прежней версии спеки о том,
-> что payload пуст, было неверным — закрыто 2026-09-27 (`AGENTS.md` § 5.1 п. 9).
+| Поле      | Тип                        | Обязательное | Описание          |
+|-----------|----------------------------|--------------|-------------------|
+| `payload` | `StickerAttachmentPayload` | **Да**       | URL + код стикера |
+| `width`   | integer                    | **Да**       | Ширина в пикселях |
+| `height`  | integer                    | **Да**       | Высота в пикселях |
 
 #### ContactAttachmentPayload
 
@@ -2257,34 +2269,36 @@ MAX пользователя. Это делает контакт пригодн�
 
 #### ShareAttachmentPayload
 
-| Поле          | Тип             | Обязательное | Описание                              |
-|---------------|-----------------|--------------|---------------------------------------|
-| `url`         | string Nullable | **Да**       | Ссылка, приходящая превью в сообщении |
-| `token`       | string Nullable | **Да**       | Токен вложения                        |
-| `title`       | string Nullable | Нет          | Заголовок превью                      |
-| `description` | string Nullable | Нет          | Описание превью                       |
-| `image_url`   | string Nullable | Нет          | URL картинки превью                   |
+| Поле    | Тип             | Обязательное | Описание                              |
+|---------|-----------------|--------------|---------------------------------------|
+| `url`   | string Nullable | Нет          | Ссылка, приходящая превью в сообщении |
+| `token` | string Nullable | Нет          | Токен вложения                        |
 
-> `title`/`description`/`image_url` официально объявлены на верхнем уровне `ShareAttachment`, у нас — внутри
-> `payload` (`AGENTS.md` § 2.1).
+#### ShareAttachment (метаданные на верхнем уровне)
 
-#### InlineKeyboardAttachmentPayload
+| Поле          | Тип                      | Обязательное | Описание            |
+|---------------|--------------------------|--------------|---------------------|
+| `payload`     | `ShareAttachmentPayload` | **Да**       | URL + токен         |
+| `title`       | string Nullable          | Нет          | Заголовок превью    |
+| `description` | string Nullable          | Нет          | Описание превью     |
+| `image_url`   | string Nullable          | Нет          | URL картинки превью |
 
-| Поле      | Тип                           | Обязательное | Описание                               |
-|-----------|-------------------------------|--------------|----------------------------------------|
-| `buttons` | array InlineKeyboardButtonRow | **Да**       | Ряды кнопок клавиатуры (минимум 1 ряд) |
+#### Keyboard (payload `inline_keyboard`)
+
+| Поле      | Тип                   | Обязательное | Описание                              |
+|-----------|-----------------------|--------------|---------------------------------------|
+| `buttons` | array\<array Button\> | **Да**       | Двумерный массив кнопок (ряды кнопок) |
 
 ### Payload исходящих вложений
 
 #### UploadedInfo — payload вложений video, audio, file
 
-| Поле    | Тип            | Описание                                                                               |
-|---------|----------------|----------------------------------------------------------------------------------------|
-| `url`   | string `<uri>` | URL загруженного файла — **нет в официальной схеме** `UploadedInfo`, `AGENTS.md` § 2.1 |
-| `token` | string         | Токен загрузки (в официальной схеме — `readOnly`)                                      |
+| Поле    | Тип    | Описание                  |
+|---------|--------|---------------------------|
+| `token` | string | Токен загрузки медиафайла |
 
 > Используется как `payload` исходящих вложений `video`, `audio`, `file`. Ответ метода `POST /uploads` описан отдельной
-> схемой `UploadEndpoint` (`url` обязателен) — уточнено 2026-10-20.
+> схемой `UploadEndpoint` (`url` обязателен, `token` nullable) — уточнено 2026-10-20.
 
 #### PhotoAttachmentRequestPayload
 
