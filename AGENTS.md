@@ -27,23 +27,29 @@
 | `tools/`               | Компараторы сверки с `schema.yaml` и единая проверка `tools/check_spec.py` — см. § 7.1                                                                     |
 | `.github/`             | CI: `.github/workflows/spec-check.yml` — `tools/check_spec.py` на push/PR и по расписанию — см. § 7.1                                                      |
 
-### 2.1 Сознательные отклонения от официальной `schema.yaml` (не «ошибки» — не править при сверке)
+### 2.1 Сознательные отклонения от официальной `schema.yaml`
 
-| Отклонение                               | Официально                                                                                                                                                                                                            | У нас в спеке                                                                                                                                                                                     | Решение                                                                                                                                                                                                                                                                                                                                                                                                                 |
-|------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Имена подтипов `Update`                  | `*Update` без базовой схемы                                                                                                                                                                                           | `UpdateBase` + `Update` (`oneOf` из 19 подтипов, общие поля наследует из `UpdateBase` через `allOf`) + `Callback`; каждый подтип закрепляет `update_type` через `enum`, у каждого свой `examples` | 2026-09-27 — официальный `Update` не содержит `oneOf`, из-за чего `required` подтипов не проверяется валидатором; наша форма строже; 2026-10-20 поля вынесены в `UpdateBase` без дублирования                                                                                                                                                                                                                           |
-| Имена подтипов вложений                  | `ImageAttachment` (не `PhotoAttachment`)                                                                                                                                                                              | `PhotoAttachment` (совпадает с `PhotoAttachmentPayload`, фото-вложение)                                                                                                                           | 2026-09-27 — выбрано имя, соответствующее типу `image` и уже существовавшей `PhotoAttachmentPayload`                                                                                                                                                                                                                                                                                                                    |
-| Расположение payload вложений            | часть метаданных на верхнем уровне подтипа: `width`/`height`/`thumbnail`/`duration` (видео), `filename`/`size` (файл), `width`/`height` (стикер), `title`/`description`/`image_url` (превью), `transcription` (аудио) | те же поля внутри `payload` подтипа — набор и обязательность совпадают, отличается только место                                                                                                   | 2026-09-27 — сохранена существовавшая модель; официальные подтипы не объявляют `oneOf`, поэтому лишние поля в `payload` не ломают валидацию. **Проверено 2026-09-27:** покрытие полей всех 6 подтипов вложений полное, расхождений 0                                                                                                                                                                                    |
-| `payload` у `share`-запроса              | отдельный пустой `ShareAttachmentRequestPayload`                                                                                                                                                                      | используется `ShareAttachmentPayload` (`url` + `token`)                                                                                                                                           | 2026-09-27 — иначе передать ссылку для превью нечем; `AGENTS.md` § 2.1                                                                                                                                                                                                                                                                                                                                                  |
-| `UploadedInfo.url` и `UploadEndpoint`    | два объекта: `UploadedInfo` — только `token` (payload вложений `video`/`audio`/`file`); `UploadEndpoint` — `url` (`required`) + nullable `token`, ответ `POST /uploads`                                               | `UploadedInfo` — `token` + `url` (payload вложений); ответ `POST /uploads` — отдельная схема `UploadEndpoint` (`url` обязателен, `token` nullable)                                                | 2026-09-27 — **подтверждено текстовой докой**: «В ответ на текущий запрос `POST /uploads` в поле `url` вернётся URL для загрузки медиафайла» (`https://dev.max.ru/docs-api/methods/POST/uploads`). Машинная схема поле не описывает — это не ошибка, а неполнота `schema.yaml`; 2026-10-20 — `url` сделан обязательным в `UploadEndpoint` (как в официальной схеме), `UploadedInfo` сохранил `url` для payload вложений |
-| `Callback`                               | `timestamp`, `callback_id`, `payload`, `user`; вложенного `message` нет                                                                                                                                               | те же 4 поля; `message` — на верхнем уровне `MessageCallbackUpdate` (Nullable)                                                                                                                    | 2026-09-27 — официальная форма, дублирование `message` устранено                                                                                                                                                                                                                                                                                                                                                        |
-| Версия OpenAPI                           | 3.0.0                                                                                                                                                                                                                 | 3.1.0                                                                                                                                                                                             | сознательно с самого начала; 2026-09-27 nullability переведена на 3.1-легальные формы — `type: [x, "null"]` (76) и `anyOf` с `- type: "null"` (19); ключевое слово `nullable` в 3.1 не существует, строгие тулы игнорировали бы его                                                                                                                                                                                     |
-| `required` для `Message.body`            | обязателен, без `nullable`                                                                                                                                                                                            | обязателен, но nullable                                                                                                                                                                           | 2026-09-27                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `User.name`                              | в `schema.yaml` отсутствует                                                                                                                                                                                           | оставлено в 4 схемах (`User`, `UserWithPhoto`, `BotInfo`, `ChatMember`) как deprecated                                                                                                            | 2026-09-27 — **подтверждено текстовой докой**: страница `https://dev.max.ru/docs-api/objects/User` описывает `name` как «Устаревшее поле, скоро будет удалено»; то же в `UserWithPhoto`, `BotInfo`, `ChatMember` и в ответе `GET /me`                                                                                                                                                                                   |
-| `CommentMessage` в событиях комментариев | `CommentCreatedUpdate.message` / `CommentEditedUpdate.message` → общий `Message`                                                                                                                                      | `CommentMessage` — самостоятельный объект (нет `url`, тело — `CommentMessageBody`)                                                                                                                | 2026-10-20 — **подтверждено текстовой докой**: на `https://dev.max.ru/docs-api/use-cases/comment-moderation` событие несёт именно комментарий — «идентификатор изменённого комментария в поле `message.recipient.post_id`» и «текстом комментария в поле `body.text`»; официальная схема переиспользует общий `Message`                                                                                                 |
+> **2026-11-16: все сознательные отклонения сняты.** Спека приведена к официальной машинной схеме
+> `max-messenger/api-schema` **v0.0.34** (коммит `0016ff3`): имена схем, поля, `required`, типы, nullability
+> и enum совпадают — `python3 tools/check_spec.py` возвращает `0`, «новых расхождений нет». Ниже — история
+> ранее зарегистрированных отклонений (все закрыты):
 
-Полный список сознательных отклонений — в этой таблице; что осталось нерешённым — в § 5.1. Порядок работы со сверкой и
-разбор её результатов — в § 7.1.
+| Отклонение (было)                           | Как снято (2026-11-16)                                                                                                           |
+|---------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| `UpdateBase` + `oneOf` + `enum` у `Update`  | `Update` = база (`update_type: string`, `timestamp`) + `discriminator`; `UpdateBase`/`UpdateType` удалены, `oneOf`/`enum` убраны |
+| Имена подтипов вложений (`PhotoAttachment`) | осталось (совпадает с официальной `PhotoAttachment`)                                                                             |
+| Метаданные вложений внутри `payload`        | перенесены на верхний уровень подтипов; `VideoAttachmentPayload`/`AudioAttachmentPayload` → `MediaAttachmentPayload`             |
+| `payload` у `share`-запроса                 | `ShareAttachmentPayload` (`url` + `token`) — совпадает с официальной                                                             |
+| `UploadedInfo.url`                          | поле удалено, `UploadedInfo` содержит только `token`; ответ `POST /uploads` — `UploadEndpoint`                                   |
+| `Callback` без вложенного `message`         | совпадает с официальной (`message` — в `MessageCallbackUpdate`)                                                                  |
+| Версия OpenAPI 3.1.0 (не 3.0.0)             | **оставлена** — версию стандарта не меняем (§ 6); nullability — 3.1-формы (`type: [x, "null"]`, `anyOf`)                         |
+| `required` для `Message.body`               | nullable убран — `body` обязателен и не-nullable                                                                                 |
+| `User.name`                                 | поле удалено из `User`/`UserWithPhoto`/`BotInfo`/`ChatMember`                                                                    |
+| `CommentMessage` в событиях комментариев    | `CommentCreatedUpdate.message` / `CommentEditedUpdate.message` → `Message`                                                       |
+
+Единственное оставшееся формальное отличие (не расхождение, «шум» `types_diff`): ID-поля объявлены как
+`integer/int64`/`string`, а официальная схема — через алиасы `ChatId`/`UserId`/`MessageId`/`bigint`
+(см. § 4.1). Семантический тип одинаков. Порядок работы со сверкой и разбор её результатов — в § 7.1.
 
 ## 3. Источники истины (только эти, по порядку приоритета)
 
@@ -82,14 +88,14 @@
 - Вебхуки (POST /subscriptions): тело `{url, update_types, secret}`, `secret` по паттерну `^[a-zA-Z0-9_-]{5,256}$`;
   доставка с заголовком `X-Max-Bot-Api-Secret`, HTTP 200 за 30 сек, ретраи 60→150→375 сек (×2.5), ~10 попыток до 8 ч,
   автоотписка после 8 ч. Параметра `allowed_hosts` нет.
-- Update: 19 типов событий, 19 подтипов `*Update` (`UpdateType`). С октября 2026 страница `Update` перечисляет все 19
-  типов текстом, включая `bot_admin_permissions_changed` (доставляется только по вебхуку, в Long Polling недоступно), но
-  свойства по-прежнему расписаны только для примера `bot_added`; состав полей — по официальной
+- Update: 19 типов событий, 19 подтипов `*Update` (дискриминатор `update_type`). С октября 2026 страница `Update`
+  перечисляет все 19 типов текстом, включая `bot_admin_permissions_changed` (доставляется только по вебхуку, в Long
+  Polling недоступно), но свойства по-прежнему расписаны только для примера `bot_added`; состав полей — по официальной
   `schema.yaml` (`BotAdminPermissionsChangedUpdate`: `update_type`, `timestamp`, `chat_id`, `user`, `is_channel`)
   (проверено 2026-10-19).
 - Комментарии (август 2026): 5 методов `/messages/{messageId}/comments*`; комментарий создаётся только в канале
   (`recipient.chat_type: channel` + `recipient.post_id`); три события `comment_created` / `comment_edited` /
-  `comment_removed` приходят боту **только с правом `read_all_messages`**, в поле `message` — `CommentMessage`
+  `comment_removed` приходят боту **только с правом `read_all_messages`**, в поле `message` — `Message`
   (см. § 2.1).
 - Subscription: `url` + `time` обязательны, `update_types` опционален; полей `type`/`state` нет ни в доках, ни в
   официальной `schema.yaml`.
@@ -100,12 +106,15 @@
   возвращены 2026-10-19.
 - Коды ошибок (общий список): 200, 400, 401, 404, 405, 429, 503.
 
-### 4.1 Реестр полей `integer/int64` — строковые значения на живом API
+### 4.1 Реестр полей-идентификаторов — строковые значения на живом API
 
-**Правило: поля остаются `integer/int64` в спеке.** Основание: официальная `schema.yaml` объявляет идентификаторы явно —
-`UserId` → `integer/int64`, `ChatId` → `integer/int64`, `bigint` → `integer/int64`, и только `MessageId` → `string`
-(проверено 2026-09-27). Спека этому соответствует: `mid` — строка,
-`chat_id`/`user_id` — числа.
+**Правило: ID-поля объявлены через алиасы, как в официальной схеме** (`2026-11-16` — конвертированы из инлайн
+`integer/int64`/`string`): `chat_id` → `$ref: ChatId`, `user_id`/`bot_id`/`contact_id`/`owner_id`/`inviter_id`/
+`admin_id` → `$ref: UserId`, `mid`/`message_id`/`post_id` → `$ref: MessageId`, `type` у link-объектов →
+`$ref: MessageLinkType`. Основание: официальная `schema.yaml` объявляет идентификаторы явно — `UserId` →
+`integer/int64`,
+`ChatId` → `integer/int64`, `bigint` → `integer/int64`, и только `MessageId` → `string` (проверено 2026-09-27). Спека
+этому соответствует: `mid` — строка, `chat_id`/`user_id` — числа (через алиасы).
 
 Наблюдения с живого API идут как **доказательство к задаче**, а не как основание для правки спеки (§3).
 
@@ -119,7 +128,8 @@
 `InvalidResponseException: Field "sender" must be an integer` после отправки сообщения (терялся `mid`, запрос уходил в
 повтор) и отбрасывал апдейты с `message.link` (HTTP 400 на вебхуке); в v1.1.4 строковое значение допущено.
 
-**Список полей `integer/int64` в `openapi.yaml` — сверять при каждой проверке одним проходом (45 в 33 схемах):**
+**Список полей-идентификаторов в `openapi.yaml` (через алиасы `ChatId`/`UserId`/`MessageId`/`bigint`) — сверять при
+каждой проверке одним проходом (было 45 в 33 схемах как `integer/int64`/`string`):**
 
 | Схема                              | Поле                                     |
 |------------------------------------|------------------------------------------|
@@ -151,20 +161,20 @@
 | `Recipient`                        | `chat_id`, `user_id`                     |
 | `Subscription`                     | `time`                                   |
 | `Update`                           | `timestamp`                              |
-| `UpdateBase`                       | `timestamp`                              |
 | `User`                             | `last_activity_time`, `user_id`          |
 | `UserAddedToChatUpdate`            | `chat_id`, `inviter_id`                  |
 | `UserMentionMarkup`                | `user_id`                                |
 | `UserRemovedFromChatUpdate`        | `admin_id`, `chat_id`                    |
 
-> `Update.timestamp` и `UpdateBase.timestamp` — одно и то же поле, объявленное в точке входа `Update`
-> и в базе; в списке посчитаны оба объявления. До рефакторинга `Update` те же поля перечислялись
-> на верхнем уровне `Update` — сверять список, а не текст.
+> `Update.timestamp` объявлено в базовой схеме `Update` (с 2026-11-16 `UpdateBase` удалён — общие поля лежат прямо
+> в `Update`, подтипы наследуют их через `allOf`). До рефакторинга те же поля перечислялись на верхнем уровне
+> `Update` — сверять список, а не текст.
 
-**Параметры (14):** `components/parameters/chatId`; `DELETE /chats/{chatId}/members/admins/{userId}` → `userId`;
+**Параметры (инлайнены 2026-11-16, см. § 2.1):** `DELETE /chats/{chatId}/members/admins/{userId}` → `userId`;
 `GET /chats/{chatId}/members` → `marker`; `DELETE /chats/{chatId}/members` → `user_id`; `GET /updates` → `marker`;
 `GET /messages` → `chat_id`, `from`, `to`, `after`, `before`; `POST /messages` → `user_id`, `chat_id`;
-`GET /messages/{messageId}/comments` → `after`, `before`.
+`GET /messages/{messageId}/comments` → `after`, `before`; `chatId`/`messageId` в путях объявлены инлайн (без
+`components/parameters`).
 
 **Задачи на будущее:**
 
@@ -197,14 +207,16 @@
   присутствуют → операция возвращена в спецу (решение пользователя). Зафиксировано, чтобы метод не удалять повторно по
   устаревшей пометке.
 - `User.name`: задокументировано на странице объекта как deprecated, но **отсутствует** в официальной `schema.yaml` —
-  спека оставляет поле (опирается на текстовую доку).
+  спека поле **удалила** 2026-11-16 (приведена к машинной схеме; ранее опиралась на текстовую доку).
 - `Message.body`: текстовая дока допускает `body: null` для сообщений только из пересланного содержимого, а
-  `schema.yaml` требует `body` и не объявляет его nullable — спека оставляет обязательным, но nullable.
+  `schema.yaml` требует `body` и не объявляет его nullable — спека следует машинной схеме (`body` обязателен,
+  не-nullable; приведено 2026-11-16).
 - Миниатюра видео: `VideoAttachment.thumbnail` (вложение в сообщении) — официальная `schema.yaml` объявляет тип
   `VideoThumbnail` (только `url`), а `VideoAttachmentDetails.thumbnail` (ответ `GET /videos/{videoToken}`) — тип
-  `PhotoAttachmentPayload`. Спека следует машинной схеме в обоих случаях: `VideoAttachmentPayload.thumbnail` →
-  `VideoThumbnail`, `VideoInfo.thumbnail` → `PhotoAttachmentPayload`. Это не баг доки, а два разных контракта (проверено
-  2026-09-27). Страница `GET /videos/{videoToken}` подтверждает оба (`urls`, `width`, `height`, `duration`).
+  `PhotoAttachmentPayload`. Спека следует машинной схеме в обоих случаях: `VideoAttachment.thumbnail` →
+  `VideoThumbnail`, `VideoAttachmentDetails.thumbnail` → `PhotoAttachmentPayload`. Это не баг доки, а два разных
+  контракта (проверено 2026-09-27). Страница `GET /videos/{videoToken}` подтверждает оба (`urls`, `width`, `height`,
+  `duration`).
 - `ContactAttachmentPayload`: пример отправки контакта на странице use-case показывает поля `name` и `contact_id`,
   которых нет в `schema.yaml` (`vcf_info`, `hash`, `max_info`) — спека следует машинной схеме.
 - **Пробелы рендера страниц (обнаружены 2026-10-19).** На страницах методов/объектов не отображаются отдельные
@@ -222,13 +234,12 @@
       `nullable: true`
       (спека приведена к nullable 2026-10-19).
 - `UserRemovedFromChatUpdate.admin_id`: `schema.yaml` объявляет поле не-nullable, но его же описание говорит «Can be
-  null in case when user left chat» — спека оставляет nullable (по смыслу описания) (проверено 2026-10-19).
-- **Расхождение источников (обнаружено 2026-10-20).** `POST /chats/{chatId}/members/admins`: на странице метода
-  (`https://dev.max.ru/docs-api/methods/POST/chats/-chatId-/members/admins`) в теле запроса указан необязательный
-  `marker` (integer int64, Nullable — «указатель на следующую страницу данных»), но в `schema.yaml` тело — обёртка
-  `ChatAdminsList` (`{admins}`, `required: [admins]`) без `marker`. Спека следует странице метода и оставляет `marker`
-  необязательным; машинная схема, судя по всему, переиспользует ту же обёртку, что и `GET`. Тела запросов по имени схемы
-  не видны — проверять компаратором `op_bodies_diff.py` (§ 7.1).
+  null in case when user left chat» — спека следует машинной схеме (не-nullable; приведено 2026-11-16).
+- **Расхождение источников (обнаружено 2026-10-20, снято 2026-11-16).** `POST /chats/{chatId}/members/admins`: на
+  странице метода (`https://dev.max.ru/docs-api/methods/POST/chats/-chatId-/members/admins`) в теле запроса был указан
+  необязательный `marker` (integer int64, Nullable), но в `schema.yaml` тело — обёртка `ChatAdminsList`
+  (`{admins}`, `required: [admins]`) без `marker`. Спека приведена к машинной схеме — `marker` из тела удалён
+  2026-11-16. Тела запросов по имени схемы не видны — проверять компаратором `op_bodies_diff.py` (§ 7.1).
 - **Расхождения на странице «Модерация комментариев» (обнаружены 2026-10-20).** На
   `https://dev.max.ru/docs-api/use-cases/comment-moderation`:
     - в шаге 3 третье событие названо `comment_removed`, а в шаге 4 того же текста то же событие — уже
@@ -421,72 +432,33 @@ info:
 новое незарегистрированное расхождение (`1`), устаревшая отметка версии — официальная схема обновилась (`1`) или сбой
 валидации/отсутствие официальной схемы (`2`).
 
-**Ожидаемый результат на 2026-10-20** (официальная v0.0.33, коммит `1a4a502` — не менялась с 2026-09-27): пути совпадают
-полностью (18 = 18); **операции совпадают** (после возвращения `POST /chats/{chatId}/members`, § 5/§ 5.2); **схем нет у
-нас 40, лишних у нас 14** — обе цифры разобраны по группам в `DOCS_MAP.md` § 1. Поля и
-`required`: все официальные поля присутствуют (проверено симметричным компаратором с разворачиванием `allOf`).
-
-> **Подтверждено 2026-10-20** после пересоздания компараторов (окружение сброшено, официальная схема не менялась):
-> выводы — `/tmp/opencode/diff_2026-10-20.txt` и `/tmp/opencode/types_2026-10-20.txt`; пути 18 = 18, операции 33 = 33,
-> схем нет у нас 40, лишних 14, битых ссылок нет. Пересозданный `types_diff.py` дополнительно показывает строку
-> `Message.body` (§ 2.1 — обязателен, но nullable), которую прошлая версия не выводила; расхождения — только
-> зарегистрированные. **Дополнено тем же днём:** `op_bodies_diff.py` до фиксов показывал 2 реальных расхождения и
-> 8 необязательных `required`; все исправлены (см. § 2.1 и журнал сессии `2026-10-20-body-level-fixes.md`).
-> **Позже тем же днём:** компараторы перенесены в `tools/`; единая команда `python3 tools/check_spec.py` печатает
-> валидацию, три отчёта и итог с реестром — на 2026-10-20 это **103 зарегистрированных отклонения, новых 0**
-> (включая `CommentMessage` в событиях комментариев — зарегистрировано в § 2.1).
+**Ожидаемый результат на 2026-11-16** (официальная v0.0.34, коммит `0016ff3`): пути 18 = 18; операции 33 = 33; **схемы
+133 = 133** (нет у нас и лишних нет); поля и `required` совпадают; nullability/enum совпадают;
+`components/responses` совпадают (6 = 6); битых ссылок нет. Итог `check_spec.py` — **зарегистрированных отклонений 0,
+новых 0**, код возврата `0`, строгая проверка `OpenAPI 3.1.0 валидна`.
 
 **Остаточные артефакты вывода** (не расхождения спеки):
 
-1. `components/parameters` — для операций с `{chatId}`/`{messageId}` показывается «нет у нас `chatId` / лишние
-   `#/components/parameters/chatId`»: параметры вынесены в `components/parameters` намеренно.
-2. Строки `type_noise` в `types_diff.py` — сравнение «как записан тип»: официальная схема часто описывает поле через
-   `allOf: [$ref ...]` или псевдоним скаляра, отсюда `офиц[any]`/`офиц[null]` против нашего явного типа. Каждая строка
-   помечена семейством (`alias`, `format_uri`, `null_form`, `payload_relocation`) — в расхождения идут только строки
-   блока «ТИПЫ — РАСХОЖДЕНИЯ» и итоговые блоки `NULLABILITY`/`ENUM`.
-3. Порядок значений `enum` (`Chat.type`, `Recipient.chat_type`) — не расхождение; в отчёте помечен как `enum_order`.
+1. Строки `type_noise` в `types_diff.py` — сравнение «как записан тип»; каждая строка помечена семейством (`alias`,
+   `format_uri`, `null_form`) и в расхождения не засчитывается:
+    - `alias` — ID-поля объявлены `integer/int64`/`string`, а официальная схема — через алиасы
+      `ChatId`/`UserId`/`MessageId`/`bigint` (см. § 4.1; семантический тип одинаков);
+    - `null_form` — 3.1-форма `anyOf`/`type: [x, "null"]` против 3.0-`nullable` (неизбежно при 3.1, § «Важно про
+      nullability»);
+    - `format_uri` — у нас `format: uri` на полях URL, в официальной схеме — просто `string` (`Url`).
+2. Порядок значений `enum` (`Chat.type`, `Recipient.chat_type`: у нас `chat, channel, dialog`, официально
+   `dialog, chat, channel`) — не расхождение, помечен как `enum_order`.
 
-> **История.** Первая версия скрипта не разворачивала `allOf`, из-за чего «половина схем была невидима»: 2026-09-27
-> были пропущены `StickerAttachmentPayload.code`, `StickerAttachment.width`/`height`, `FileAttachment.filename`/`size`,
-> `VideoAttachment.width`/`height`/`thumbnail`, `AudioAttachment.transcription`,
-> `ShareAttachment.title`/`description`/`image_url` и `required` у `ChatMember` — все они тогда добавлены.
-
-**Настоящие расхождения (не артефакты) — зарегистрированы, не «чинить».** Это поля, которых в официальной
-`schema.yaml` нет вовсе; все прочие официальные поля присутствуют (проверено 2026-10-20 симметричным компаратором с
-разворачиванием `allOf`):
-
-| Схема                                          | Поле      | Где зарегистрировано                                                             |
-|------------------------------------------------|-----------|----------------------------------------------------------------------------------|
-| `User`                                         | `name`    | § 5 — deprecated в текстовой доке, но нет в `schema.yaml`                        |
-| `UploadedInfo`                                 | `url`     | § 2.1 — payload вложений; ответ `POST /uploads` описан как `UploadEndpoint`      |
-| `CommentCreatedUpdate` / `CommentEditedUpdate` | `message` | § 2.1 — событие несёт `CommentMessage`, официальная схема ссылается на `Message` |
-
-Тела запросов и 2xx-ответов, где расхождение по **полям**, а не по именам схем, проверяются `op_bodies_diff.py`.
-Зарегистрированное отклонение там одно: `marker` в теле `POST /chats/{chatId}/members/admins` (§ 5 — страница метода его
-документирует, машинная схема нет).
-
-Бывшие строки `MessageBody.caption`/`format` и `PhotoAttachmentPayload.width`/`height` убраны: эти поля удалены из спеки
-2026-09-27 (§ 5.1 п. 7), и в текущем diff их нет.
-
-**Nullability/enum приведены к `schema.yaml` 2026-10-19** (официальная схема — источник правды по типам, § 3):
-`last_activity_time` в `User`/`UserWithPhoto`/`BotInfo`/`ChatMember` — nullable; `NewMessageBody.format` — nullable;
-`user_locale` в `bot_started`/`bot_stopped`/`dialog_cleared`/`dialog_muted`/`dialog_unmuted`/`dialog_removed` — не
-nullable; `Callback.payload`, `LinkedMessage.chat_id`, `CommentLinkedMessage.chat_id`, `UploadedInfo.token` — не
-nullable; в `ChatStatus` добавлено значение `suspended`. Сознательных отклонений по nullability **два**:
-`Message.body` (§ 2.1 — обязателен, но nullable: текстовая дока допускает `body: null`) и
-`UserRemovedFromChatUpdate.admin_id` (§ 5: официальная схема не-nullable, но её описание допускает `null`).
-
-**14 лишних схем** — наши собственные базы и типы (`AttachmentBase`, `AttachmentRequestBase`,
-`AttachmentType`, `UpdateBase`, `UpdateType`, `ButtonType`, `ErrorResponse`, `SuccessResponse`), подтипы вложений,
-разложенные на `payload` (`AudioAttachmentPayload`, `InlineKeyboardAttachmentPayload`,
-`VideoAttachmentPayload`), и `VideoInfo`. `Update`/`Callback` в diff больше не появляются: у `Update` состав полей и
-`required` те же, что у официальной схемы (общие поля наследуются из `UpdateBase` через `allOf`, 2026-10-20), а
-`message` перенесён в `MessageCallbackUpdate`.
+> **История (2026-10-20 → 2026-11-16).** До выравнивания на 2026-10-20 было 103 зарегистрированных отклонения
+> (схем нет у нас 40, лишних 14, `Message.body` nullable, `CommentMessage` в событиях комментариев и др.). Всё это
+> снято 2026-11-16 (см. § 2.1 и журнал сессии `2026-11-16-align-official-schema.md`): официальная схема обновилась
+> до v0.0.34 (появились `SimpleQueryResult` с `code` и `Error`), спека приведена по именам, полям, `required`, типам,
+> nullability и enum.
 
 **Куда записывать результат сверки.** Отдельного файла со списком задач больше нет (`TODO.md` удалён 2026-09-27,
-содержимое разложено по этому файлу): подтверждение сходит в § 4 и § 4.1; сознательно оставленное расхождение — в § 2.1;
-поле без подтверждения в официальной схеме — в § 5.1, с пометкой в описании самой схемы. Наблюдения живого API — в § 4.1
-как доказательства, а не как основание менять спеку (§ 3).
+содержимое разложено по этому файлу): подтверждение сходит в § 4 и § 4.1; новое расхождение — правкой спеки либо строкой
+в § 2.1 / § 5 и записью в `REGISTERED` (`tools/check_spec.py`). Наблюдения живого API — в § 4.1 как доказательства, а не
+как основание менять спеку (§ 3).
 
 **Важно про nullability.** Ключевое слово `nullable` в OpenAPI 3.1 **не существует** (3.1 использует JSON Schema
 2020-12) и инструментами не интерпретируется: `openapi-spec-validator` такую спеку **не отвергает**, но и `null` в этих

@@ -42,58 +42,11 @@ from _common import DEFAULT_OFF, DEFAULT_OUR  # noqa: E402
 # None в «ключах» — вид зарегистрирован целиком (группа разобрана в доке).
 # Новое отклонение, не попавшее сюда, — это сигнал: либо правка спеки, либо
 # регистрация в AGENTS.md § 2.1 / § 5 (см. AGENTS.md § 7.1).
+#
+# 2026-11-16: спека приведена к официальной schema.yaml v0.0.34 (имена, поля,
+# required, типы, nullability, enum) — сознательных отклонений больше нет,
+# реестр пуст. При новом расхождении добавить сюда запись и строку в AGENTS.md.
 REGISTERED = [
-    ("official", "missing_schema", None,
-     "DOCS_MAP § 1 — 40 отсутствующих схем разобраны по группам"),
-    ("official", "extra_schema", None,
-     "DOCS_MAP § 1 — наши базы/enum/обёртки/payload-подтипы"),
-    ("official", "extra_param", None,
-     "AGENTS § 7.1 п. 1 — параметры вынесены в components/parameters"),
-    ("official", "missing_response", None,
-     "AGENTS § 5 — спека использует единый список кодов"),
-    ("official", "extra_response", None,
-     "AGENTS § 5 — спека использует единый список кодов"),
-    ("official", "extra_field", {
-        "BotInfo.name", "ChatMember.name", "User.name", "UserWithPhoto.name"},
-     "AGENTS § 2.1 — User.name (deprecated в текстовой доке, нет в schema.yaml)"),
-    ("official", "extra_field", {"UploadedInfo.url"},
-     "AGENTS § 2.1 — url payload вложений; ответ POST /uploads — UploadEndpoint"),
-    # Расположение метаданных вложений внутри payload (AGENTS.md § 2.1).
-    ("official", "missing_field", {
-        "AudioAttachment.transcription",
-        "FileAttachment.filename", "FileAttachment.size",
-        "ShareAttachment.description", "ShareAttachment.image_url", "ShareAttachment.title",
-        "StickerAttachment.height", "StickerAttachment.width",
-        "VideoAttachment.duration", "VideoAttachment.height", "VideoAttachment.thumbnail",
-        "VideoAttachment.width"},
-     "AGENTS § 2.1 — метаданные вложений лежат в payload, а не на верхнем уровне"),
-    ("official", "extra_field", {
-        "FileAttachmentPayload.filename", "FileAttachmentPayload.size",
-        "ShareAttachmentPayload.description", "ShareAttachmentPayload.image_url",
-        "ShareAttachmentPayload.title",
-        "StickerAttachmentPayload.height", "StickerAttachmentPayload.width"},
-     "AGENTS § 2.1 — метаданные вложений лежат в payload, а не на верхнем уровне"),
-    ("official", "missing_required", {
-        "FileAttachment.filename", "FileAttachment.size",
-        "StickerAttachment.height", "StickerAttachment.width"},
-     "AGENTS § 2.1 — тот же перенос метаданных вложений"),
-    ("official", "extra_required", {
-        "FileAttachmentPayload.filename", "FileAttachmentPayload.size",
-        "StickerAttachmentPayload.height", "StickerAttachmentPayload.width"},
-     "AGENTS § 2.1 — тот же перенос метаданных вложений"),
-    ("types", "nullability", {
-        "Message.body"},
-     "AGENTS § 2.1 — обязателен, но nullable (текстовая дока допускает body: null)"),
-    ("types", "nullability", {
-        "UserRemovedFromChatUpdate.admin_id"},
-     "AGENTS § 5 — schema.yaml не-nullable, но описание допускает null"),
-    ("types", "type", {
-        "CommentCreatedUpdate.message", "CommentEditedUpdate.message"},
-     "AGENTS § 2.1 — событие несёт CommentMessage, официальная схема ссылается на Message"),
-    ("bodies", "extra_field", {"POST /chats/{chatId}/members/admins::marker"},
-     "AGENTS § 5 — страница метода документирует marker, машинная схема нет"),
-    ("bodies", "extra_field", {"GET /chats/{chatId}/members/me::name", "GET /me::name"},
-     "AGENTS § 2.1 — User.name"),
 ]
 
 IGNORED_KINDS = {"info", "type_noise", "enum_order"}
