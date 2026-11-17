@@ -71,8 +71,8 @@ paths:
                 $ref: "#/components/schemas/BotInfo"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /me/commands:
     patch:
@@ -108,8 +108,8 @@ paths:
                       $ref: "#/components/schemas/BotCommand"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /chats/{chatId}:
     get:
@@ -134,10 +134,8 @@ paths:
                 $ref: "#/components/schemas/Chat"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
     patch:
       operationId: editChat
@@ -197,10 +195,10 @@ paths:
                 $ref: "#/components/schemas/Chat"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /chats/{chatId}/actions:
     post:
@@ -238,10 +236,8 @@ paths:
                 $ref: "#/components/schemas/SimpleQueryResult"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /chats/{chatId}/pin:
     get:
@@ -273,10 +269,12 @@ paths:
                     description: Закреплённое сообщение (null, если нет)
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
     put:
       operationId: pinMessage
@@ -317,10 +315,12 @@ paths:
                 $ref: "#/components/schemas/SimpleQueryResult"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
     delete:
       operationId: unpinMessage
@@ -345,10 +345,12 @@ paths:
                 $ref: "#/components/schemas/SimpleQueryResult"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /chats/{chatId}/members/me:
     get:
@@ -376,10 +378,12 @@ paths:
                 $ref: "#/components/schemas/ChatMember"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
     delete:
       operationId: leaveChat
@@ -403,10 +407,12 @@ paths:
                 $ref: "#/components/schemas/SimpleQueryResult"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /chats/{chatId}/members/admins:
     get:
@@ -443,10 +449,12 @@ paths:
                   - members
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
     post:
       operationId: postAdmins
@@ -488,10 +496,12 @@ paths:
                 $ref: "#/components/schemas/SimpleQueryResult"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /chats/{chatId}/members/admins/{userId}:
     delete:
@@ -526,10 +536,8 @@ paths:
                 $ref: "#/components/schemas/SimpleQueryResult"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /chats/{chatId}/members:
     get:
@@ -592,10 +600,12 @@ paths:
                   - members
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
     post:
       operationId: addMembers
@@ -656,10 +666,12 @@ paths:
                           $ref: "#/components/schemas/FailedUserDetails"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
     delete:
       operationId: removeMember
@@ -700,10 +712,10 @@ paths:
                 $ref: "#/components/schemas/SimpleQueryResult"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /subscriptions:
     get:
@@ -726,8 +738,8 @@ paths:
                   - subscriptions
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
     post:
       operationId: subscribe
@@ -789,8 +801,8 @@ paths:
                 $ref: "#/components/schemas/SimpleQueryResult"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
     delete:
       operationId: unsubscribe
@@ -816,10 +828,8 @@ paths:
                 $ref: "#/components/schemas/SimpleQueryResult"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /updates:
     get:
@@ -889,6 +899,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "405":
           $ref: "#/components/responses/NotAllowed"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /uploads:
     post:
@@ -932,8 +944,8 @@ paths:
                 $ref: "#/components/schemas/UploadEndpoint"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /messages:
     get:
@@ -1015,10 +1027,10 @@ paths:
                   - messages
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
     post:
       operationId: sendMessage
@@ -1085,10 +1097,10 @@ paths:
                   - message
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
     put:
       operationId: editMessage
@@ -1125,10 +1137,8 @@ paths:
                 $ref: "#/components/schemas/SimpleQueryResult"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
     delete:
       operationId: deleteMessage
@@ -1161,10 +1171,10 @@ paths:
                 $ref: "#/components/schemas/SimpleQueryResult"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /messages/{messageId}:
     get:
@@ -1189,10 +1199,10 @@ paths:
                 $ref: "#/components/schemas/Message"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /videos/{videoToken}:
     get:
@@ -1217,10 +1227,12 @@ paths:
                 $ref: "#/components/schemas/VideoAttachmentDetails"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /answers:
     post:
@@ -1278,8 +1290,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "405":
           $ref: "#/components/responses/NotAllowed"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /messages/{messageId}/comments:
     get:
@@ -1333,10 +1345,8 @@ paths:
                 $ref: "#/components/schemas/CommentMessageList"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
     post:
       operationId: sendComment
@@ -1382,10 +1392,8 @@ paths:
                 $ref: "#/components/schemas/SendCommentResult"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
     put:
       operationId: editComment
@@ -1422,10 +1430,8 @@ paths:
                 $ref: "#/components/schemas/SimpleQueryResult"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
     delete:
       operationId: deleteComment
@@ -1456,10 +1462,10 @@ paths:
                 $ref: "#/components/schemas/SimpleQueryResult"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /messages/{messageId}/comments/{commentId}:
     get:
@@ -1491,10 +1497,10 @@ paths:
                 $ref: "#/components/schemas/CommentMessage"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "405":
-          $ref: "#/components/responses/NotAllowed"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
 components:
   securitySchemes:
@@ -1718,7 +1724,7 @@ components:
         mapping:
           strong: "#/components/schemas/StrongMarkup"
           emphasized: "#/components/schemas/EmphasizedMarkup"
-          underlined: "#/components/schemas/UnderlineMarkup"
+          underline: "#/components/schemas/UnderlineMarkup"
           strikethrough: "#/components/schemas/StrikethroughMarkup"
           monospaced: "#/components/schemas/MonospacedMarkup"
           highlighted: "#/components/schemas/HighlightedMarkup"
