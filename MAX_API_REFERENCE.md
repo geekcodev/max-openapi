@@ -11,8 +11,7 @@
 **Лимиты запросов:** 30 RPS на `platform-api2.max.ru`. Максимум 2 сообщения/редактирования/удаления/ответа в секунду на
 диалог/чат/канал.
 
-**Последнее обновление:** 2026-09-27 (сверка с `dev.max.ru/docs-api/changelog-api` и официальной машинной спекой
-`github.com/max-messenger/api-schema` v0.0.33)
+**Последнее обновление:** 2026-11-16 (спека приведена к официальной `github.com/max-messenger/api-schema` v0.0.34)
 
 ---
 
@@ -60,9 +59,9 @@
 
 ### Удалённые методы
 
-| Метод | Путь     | Статус                                                                                                                                                                                                                                                                      |
-|-------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| GET   | `/chats` | **Удалён в июне 2026** — «Удалено» в [`changelog-api`](https://dev.max.ru/docs-api/changelog-api) (раздел Chats, июнь 2026), путь убран из официальной `schema.yaml` v0.0.33. Готовой замены нет: собирайте `chat_id` из событий `bot_added`/`bot_started` и храните у себя |
+| Метод | Путь     | Статус                                                                                                                                                                                                                                                              |
+|-------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| GET   | `/chats` | **Удалён в июне 2026** — «Удалено» в [`changelog-api`](https://dev.max.ru/docs-api/changelog-api) (раздел Chats, июнь 2026), путь убран из официальной `schema.yaml`. Готовой замены нет: собирайте `chat_id` из событий `bot_added`/`bot_started` и храните у себя |
 
 ### Объекты
 
@@ -115,7 +114,6 @@
 | `username`           | string Nullable                | Имя пользователя/никнейм              |
 | `is_bot`             | boolean                        | `true`, если бот                      |
 | `last_activity_time` | integer `<int64>` Nullable     | Время последней активности (Unix, мс) |
-| `name`               | string Nullable                | **Устарело**                          |
 | `description`        | string Nullable optional       | До 16000 символов                     |
 | `avatar_url`         | string optional                | URL миниатюры аватара                 |
 | `full_avatar_url`    | string optional                | URL полного аватара                   |
@@ -171,7 +169,7 @@
 | Поле                 | Тип                                    | Описание                                                     |
 |----------------------|----------------------------------------|--------------------------------------------------------------|
 | `chat_id`            | integer `<int64>`                      | ID чата/канала                                               |
-| `type`               | enum `ChatType`                        | `"chat"`, `"channel"` или `"dialog"`                         |
+| `type`               | enum `ChatType`                        | `"dialog"`, `"chat"` или `"channel"`                         |
 | `status`             | enum `ChatStatus`                      | `"active"`, `"removed"`, `"left"`, `"closed"`, `"suspended"` |
 | `title`              | string Nullable                        | Название чата/канала (null для диалогов)                     |
 | `icon`               | object Image Nullable                  | Иконка чата                                                  |
@@ -229,9 +227,9 @@
 
 **Тело запроса:**
 
-| Поле     | Тип                 | Обязательное | Описание                                                                                 |
-|----------|---------------------|--------------|------------------------------------------------------------------------------------------|
-| `action` | enum `SenderAction` | Да           | `"typing_on"`, `"sending_photo"`, `"sending_video"`, `"sending_audio"`, `"sending_file"` |
+| Поле     | Тип                 | Обязательное | Описание                                                                                                |
+|----------|---------------------|--------------|---------------------------------------------------------------------------------------------------------|
+| `action` | enum `SenderAction` | Да           | `"typing_on"`, `"sending_photo"`, `"sending_video"`, `"sending_audio"`, `"sending_file"`, `"mark_seen"` |
 
 **Ответ:**
 
@@ -333,7 +331,6 @@
 | `username`           | string Nullable                | Имя пользователя                               |
 | `is_bot`             | boolean                        | `true`, если бот                               |
 | `last_activity_time` | integer `<int64>` Nullable     | Время последней активности (Unix, мс)          |
-| `name`               | string Nullable                | **Устарело**                                   |
 | `description`        | string Nullable optional       | До 16000 символов                              |
 | `avatar_url`         | string optional                | URL миниатюры аватара                          |
 | `full_avatar_url`    | string optional                | URL полного аватара                            |
@@ -403,10 +400,9 @@
 
 **Тело запроса:**
 
-| Поле     | Тип                                 | Обязательное | Описание                                                   |
-|----------|-------------------------------------|--------------|------------------------------------------------------------|
-| `admins` | ChatAdmin[]                         | Да           | Список пользователей/ботов для назначения администраторами |
-| `marker` | integer `<int64>` Nullable optional | Нет          | Указатель следующей страницы                               |
+| Поле     | Тип         | Обязательное | Описание                                                   |
+|----------|-------------|--------------|------------------------------------------------------------|
+| `admins` | ChatAdmin[] | Да           | Список пользователей/ботов для назначения администраторами |
 
 Каждый `ChatAdmin` содержит:
 
@@ -848,15 +844,15 @@
 
 **Ответ:**
 
-| Поле        | Тип                                    | Описание                                                                                    |
-|-------------|----------------------------------------|---------------------------------------------------------------------------------------------|
-| `sender`    | object User optional                   | Пользователь, отправивший сообщение                                                         |
-| `recipient` | object Recipient                       | Получатель (пользователь или чат)                                                           |
-| `timestamp` | integer `<int64>`                      | Время создания (Unix, мс)                                                                   |
-| `link`      | object LinkedMessage Nullable optional | Пересланное или цитируемое сообщение                                                        |
-| `body`      | object MessageBody                     | Содержимое сообщения (текст + вложения). Может быть null, если только пересланное сообщение |
-| `stat`      | object MessageStat Nullable optional   | Статистика сообщения (только посты в каналах)                                               |
-| `url`       | string Nullable optional               | Публичный URL поста в канале (не для диалогов/групп)                                        |
+| Поле        | Тип                                    | Описание                                             |
+|-------------|----------------------------------------|------------------------------------------------------|
+| `sender`    | object User optional                   | Пользователь, отправивший сообщение                  |
+| `recipient` | object Recipient                       | Получатель (пользователь или чат)                    |
+| `timestamp` | integer `<int64>`                      | Время создания (Unix, мс)                            |
+| `link`      | object LinkedMessage Nullable optional | Пересланное или цитируемое сообщение                 |
+| `body`      | object MessageBody                     | Содержимое сообщения (текст + вложения)              |
+| `stat`      | object MessageStat Nullable optional   | Статистика сообщения (только посты в каналах)        |
+| `url`       | string Nullable optional               | Публичный URL поста в канале (не для диалогов/групп) |
 
 ---
 
@@ -1045,19 +1041,19 @@ ChatMember.
 
 **Поля:**
 
-| Поле                 | Тип                        | Обязательное | Описание                                                                                             |
-|----------------------|----------------------------|--------------|------------------------------------------------------------------------------------------------------|
-| `user_id`            | integer `<int64>`          | **Да**       | ID пользователя/бота                                                                                 |
-| `first_name`         | string                     | **Да**       | Отображаемое имя                                                                                     |
-| `last_name`          | string Nullable optional   | Нет          | Фамилия (не для ботов)                                                                               |
-| `username`           | string Nullable            | Нет          | Имя пользователя (может быть null, если недоступно)                                                  |
-| `is_bot`             | boolean                    | **Да**       | `true`, если бот                                                                                     |
-| `last_activity_time` | integer `<int64>` Nullable | Нет          | Время последней активности (Unix, мс; `null`/отсутствие — если пользователь скрывает онлайн-статус)  |
-| `name`               | string Nullable            | Нет          | **Устарело** — задокументировано на странице объекта, но **отсутствует в официальной `schema.yaml`** |
+| Поле                 | Тип                        | Обязательное | Описание                                                                                            |
+|----------------------|----------------------------|--------------|-----------------------------------------------------------------------------------------------------|
+| `user_id`            | integer `<int64>`          | **Да**       | ID пользователя/бота                                                                                |
+| `first_name`         | string                     | **Да**       | Отображаемое имя                                                                                    |
+| `last_name`          | string Nullable optional   | Нет          | Фамилия (не для ботов)                                                                              |
+| `username`           | string Nullable            | Нет          | Имя пользователя (может быть null, если недоступно)                                                 |
+| `is_bot`             | boolean                    | **Да**       | `true`, если бот                                                                                    |
+| `last_activity_time` | integer `<int64>` Nullable | Нет          | Время последней активности (Unix, мс; `null`/отсутствие — если пользователь скрывает онлайн-статус) |
 
 > Обязательные поля (`user_id`, `first_name`, `is_bot`) подтверждены официальной `schema.yaml`, схема `User`
-> (проверено 2026-09-27). Поле `name` оставлено сознательно: оно описано как deprecated на
-> `https://dev.max.ru/docs-api/objects/User`, расхождение доки зафиксировано в `AGENTS.md` § 5.
+> (проверено 2026-09-27). Поле `name` удалено 2026-11-16: оно описано как deprecated на
+> `https://dev.max.ru/docs-api/objects/User`, но отсутствует в официальной `schema.yaml` — спека приведена к машинной
+> схеме (расхождение доки зафиксировано в `AGENTS.md` § 5).
 
 ---
 
@@ -1119,7 +1115,7 @@ ChatMember.
 | Поле                 | Тип                                    | Обязательное | Описание                                                      |
 |----------------------|----------------------------------------|--------------|---------------------------------------------------------------|
 | `chat_id`            | integer `<int64>`                      | **Да**       | ID чата/канала                                                |
-| `type`               | enum `ChatType`                        | **Да**       | `"chat"`, `"channel"`, `"dialog"`                             |
+| `type`               | enum `ChatType`                        | **Да**       | `"dialog"`, `"chat"`, `"channel"`                             |
 | `status`             | enum `ChatStatus`                      | **Да**       | `"active"`, `"removed"`, `"left"`, `"closed"`, `"suspended"`  |
 | `title`              | string Nullable                        | Нет          | Название чата (null для диалогов)                             |
 | `icon`               | object Image Nullable                  | Нет          | Иконка чата                                                   |
@@ -1165,20 +1161,20 @@ ChatMember.
 
 **Поля:**
 
-| Поле        | Тип                                    | Обязательное | Описание                                                                         |
-|-------------|----------------------------------------|--------------|----------------------------------------------------------------------------------|
-| `sender`    | object User optional                   | Нет          | Пользователь, отправивший сообщение                                              |
-| `recipient` | object Recipient                       | **Да**       | Получатель (пользователь или чат)                                                |
-| `timestamp` | integer `<int64>`                      | **Да**       | Время создания (Unix, мс)                                                        |
-| `link`      | object LinkedMessage Nullable optional | Нет          | Пересланное или цитируемое сообщение                                             |
-| `body`      | object MessageBody Nullable            | **Да**       | Содержимое сообщения (текст + вложения). Null, если только пересланное сообщение |
-| `stat`      | object MessageStat Nullable optional   | Нет          | Статистика (только посты в каналах)                                              |
-| `url`       | string Nullable optional               | Нет          | Публичный URL поста в канале (не для диалогов/групп)                             |
+| Поле        | Тип                                    | Обязательное | Описание                                             |
+|-------------|----------------------------------------|--------------|------------------------------------------------------|
+| `sender`    | object User optional                   | Нет          | Пользователь, отправивший сообщение                  |
+| `recipient` | object Recipient                       | **Да**       | Получатель (пользователь или чат)                    |
+| `timestamp` | integer `<int64>`                      | **Да**       | Время создания (Unix, мс)                            |
+| `link`      | object LinkedMessage Nullable optional | Нет          | Пересланное или цитируемое сообщение                 |
+| `body`      | object MessageBody                     | **Да**       | Содержимое сообщения (текст + вложения)              |
+| `stat`      | object MessageStat Nullable optional   | Нет          | Статистика (только посты в каналах)                  |
+| `url`       | string Nullable optional               | Нет          | Публичный URL поста в канале (не для диалогов/групп) |
 
-> Обязательные поля подтверждены официальной `schema.yaml`, схема `Message` (проверено 2026-09-27). Обязательность
-> `body` там задана **без** `nullable`, при этом текстовая дока допускает `body: null` для сообщений, которые
-> состоят только из пересланного содержимого. Спека оставляет `body` обязательным, но nullable — расхождение доки
-> зафиксировано в `AGENTS.md` § 5. Поле `MessageStat.views` тоже обязательно.
+> Обязательные поля подтверждены официальной `schema.yaml`, схема `Message` (проверено 2026-09-27). `body` обязателен
+> и **не** nullable — спека следует машинной схеме (приведено 2026-11-16); текстовая дока допускает `body: null`
+> для сообщений только из пересланного содержимого, это расхождение доки зафиксировано в `AGENTS.md` § 5.
+> Поле `MessageStat.views` тоже обязательно.
 
 ---
 
@@ -1224,7 +1220,7 @@ ChatMember.
 Пересланное или ответное сообщение. Возвращается в `Message.link`.
 
 > Состав полей подтверждён официальной машинной спецификацией
-> `github.com/max-messenger/api-schema` → `schema.yaml` (v0.0.33, проверено 2026-09-27).
+> `github.com/max-messenger/api-schema` → `schema.yaml` (v0.0.34, проверено 2026-09-27).
 > **Исправление:** раньше спека объявляла `sender` числовым ID и содержала поля `mid`/`chat`;
 > фактически `sender` — объект `User`, а `mid` и текст находятся внутри `message`, а `chat` → `chat_id`.
 
@@ -1387,24 +1383,24 @@ ChatMember.
 
 **Описание полей:**
 
-| Поле          | Тип                                      | Описание                                                                                                                                                                                                                               |
-|---------------|------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `update_type` | string                                   | Тип события                                                                                                                                                                                                                            |
-| `timestamp`   | integer `<int64>`                        | Время события (Unix, мс)                                                                                                                                                                                                               |
-| `chat_id`     | integer `<int64>`                        | ID чата/диалога, где произошло событие. Для `message_created`/`message_edited`/`message_callback` на верхнем уровне отсутствует — источник `message.recipient.chat_id` (для `message_callback` — `callback.message.recipient.chat_id`) |
-| `user`        | object User                              | Пользователь, связанный с событием. Для `message_created`/`message_edited` на верхнем уровне отсутствует — источник `message.sender` (для `message_callback` — `callback.message.sender`)                                              |
-| `user_locale` | string                                   | Текущий язык пользователя в формате IETF BCP 47 (например, `"ru"`). `Nullable` — только в событиях `message_callback`, `message_created`, `message_edited`                                                                             |
-| `is_channel`  | boolean                                  | `true`, если событие произошло в канале (а не в чате)                                                                                                                                                                                  |
-| `payload`     | string Nullable                          | Дополнительные данные из диплинков, переданные при запуске бота. До 512 символов (для `bot_started`)                                                                                                                                   |
-| `title`       | string                                   | Новое название чата (для `chat_title_changed`)                                                                                                                                                                                         |
-| `muted_until` | integer `<int64>`                        | Время, до которого диалог был отключён (Unix, мс; для `dialog_muted`)                                                                                                                                                                  |
-| `message`     | object Message / CommentMessage Nullable | Сообщение (для `message_created`, `message_edited`) или комментарий (для `comment_created`, `comment_edited` — объект `CommentMessage`, см. `AGENTS.md` §2.1)                                                                          |
-| `message_id`  | string                                   | ID удалённого сообщения (для `message_removed`, `comment_removed`)                                                                                                                                                                     |
-| `post_id`     | string Nullable                          | ID поста, к которому относится комментарий (для `comment_removed`). В остальных событиях — источник `message.recipient.post_id`                                                                                                        |
-| `user_id`     | integer `<int64>`                        | Пользователь, удаливший сообщение (для `message_removed`, `comment_removed`)                                                                                                                                                           |
-| `inviter_id`  | integer `<int64>` Nullable               | Пользователь, добавивший нового пользователя в чат. Может быть null, если присоединение по ссылке (для `user_added`)                                                                                                                   |
-| `admin_id`    | integer `<int64>` Nullable               | Администратор, удаливший пользователя из чата. Может быть null, если пользователь покинул чат сам (для `user_removed`)                                                                                                                 |
-| `callback`    | object Callback                          | Данные нажатой callback-кнопки: `timestamp`, `callback_id`, `payload`, `user`. Исходное сообщение лежит **рядом**, в `message` события (Nullable). Только для `message_callback`                                                       |
+| Поле          | Тип                        | Описание                                                                                                                                                                                                                               |
+|---------------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `update_type` | string                     | Тип события                                                                                                                                                                                                                            |
+| `timestamp`   | integer `<int64>`          | Время события (Unix, мс)                                                                                                                                                                                                               |
+| `chat_id`     | integer `<int64>`          | ID чата/диалога, где произошло событие. Для `message_created`/`message_edited`/`message_callback` на верхнем уровне отсутствует — источник `message.recipient.chat_id` (для `message_callback` — `callback.message.recipient.chat_id`) |
+| `user`        | object User                | Пользователь, связанный с событием. Для `message_created`/`message_edited` на верхнем уровне отсутствует — источник `message.sender` (для `message_callback` — `callback.message.sender`)                                              |
+| `user_locale` | string                     | Текущий язык пользователя в формате IETF BCP 47 (например, `"ru"`). `Nullable` — только в событиях `message_callback`, `message_created`, `message_edited`                                                                             |
+| `is_channel`  | boolean                    | `true`, если событие произошло в канале (а не в чате)                                                                                                                                                                                  |
+| `payload`     | string Nullable            | Дополнительные данные из диплинков, переданные при запуске бота. До 512 символов (для `bot_started`)                                                                                                                                   |
+| `title`       | string                     | Новое название чата (для `chat_title_changed`)                                                                                                                                                                                         |
+| `muted_until` | integer `<int64>`          | Время, до которого диалог был отключён (Unix, мс; для `dialog_muted`)                                                                                                                                                                  |
+| `message`     | object Message Nullable    | Сообщение (для `message_created`, `message_edited`, `comment_created`, `comment_edited` — во всех случаях общий `Message`)                                                                                                             |
+| `message_id`  | string                     | ID удалённого сообщения (для `message_removed`, `comment_removed`)                                                                                                                                                                     |
+| `post_id`     | string Nullable            | ID поста, к которому относится комментарий (для `comment_removed`). В остальных событиях — источник `message.recipient.post_id`                                                                                                        |
+| `user_id`     | integer `<int64>`          | Пользователь, удаливший сообщение (для `message_removed`, `comment_removed`)                                                                                                                                                           |
+| `inviter_id`  | integer `<int64>` Nullable | Пользователь, добавивший нового пользователя в чат. Может быть null, если присоединение по ссылке (для `user_added`)                                                                                                                   |
+| `admin_id`    | integer `<int64>`          | Администратор, удаливший пользователя из чата (для `user_removed`)                                                                                                                                                                     |
+| `callback`    | object Callback            | Данные нажатой callback-кнопки: `timestamp`, `callback_id`, `payload`, `user`. Исходное сообщение лежит **рядом**, в `message` события (Nullable). Только для `message_callback`                                                       |
 
 **Примеры событий:**
 
@@ -2146,8 +2142,8 @@ MAX пользователя. Это делает контакт пригодн�
 - Максимум 210 кнопок всего
 - Максимум 30 рядов
 - Максимум 7 кнопок в ряду (максимум 3 для `link`, `open_app`, `request_geo_location`, `request_contact`)
-- Текст кнопки — максимум 2048 символов (поддерживает форматирование)
-- `payload` кнопки — максимум 8 КБ
+- Текст кнопки — максимум 128 символов
+- `payload` кнопки — максимум 1024 символа (`callback`, `clipboard`), 512 символов (`open_app`)
 
 ---
 
@@ -2329,9 +2325,8 @@ MAX пользователя. Это делает контакт пригодн�
 
 #### share-запрос: используется ShareAttachmentPayload
 
-Официальная схема объявляет отдельный `ShareAttachmentRequestPayload` **пустым объектом**; в спеке запрос `share`
-использует `ShareAttachmentPayload` (`url` + `token`) — как у ответа, так и в отправке, потому что иначе передать ссылку
-для превью нечем. Это сознательное расхождение, `AGENTS.md` § 2.1.
+Запрос `share` использует `ShareAttachmentPayload` (`url` + `token`) — как у ответа, так и в отправке. Это совпадает с
+официальной схемой v0.0.34 (`ShareAttachmentRequest.payload` → `$ref: ShareAttachmentPayload`).
 
 Примеры отправки вложений — в разделах методов ([`POST /messages`](#23-post-messages),
 [`POST /answers`](#28-post-answers), [Inline-клавиатура](#inline-клавиатура)).
